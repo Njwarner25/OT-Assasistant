@@ -1,0 +1,776 @@
+{
+  "timestamp": "2026-02-06T23:57:22.480074",
+  "total_tests": 12,
+  "passed_tests": 12,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Valid Admin Login",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "success": true,
+        "message": "Login successful",
+        "is_admin": true
+      }
+    },
+    {
+      "test": "Invalid Login",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "success": false,
+        "message": "Invalid credentials",
+        "is_admin": false
+      }
+    },
+    {
+      "test": "Seed Officers",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "message": "Officers already seeded",
+        "count": 50
+      }
+    },
+    {
+      "test": "Get Officers List",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": [
+        {
+          "id": "4dc0241b-a178-47f9-b578-88c06fad5e11",
+          "last_name": "RODRIGUEZ",
+          "first_name": "SYLVIA",
+          "star": "10594",
+          "seniority_date": "04/01/2013",
+          "created_at": "2026-02-06T23:55:12.858610+00:00"
+        },
+        {
+          "id": "0fb93ec0-a01e-4141-8026-81c7ed217b06",
+          "last_name": "RODRIGUEZ",
+          "first_name": "SYLVIA",
+          "star": "10594",
+          "seniority_date": "04/01/2013",
+          "created_at": "2026-02-06T23:55:12.859133+00:00"
+        },
+        {
+          "id": "035f6f9b-beb7-4ac8-a7d6-3a5d8f29fb07",
+          "last_name": "YANEZ",
+          "first_name": "ARNULFO",
+          "star": "17142",
+          "seniority_date": "06/03/2013",
+          "created_at": "2026-02-06T23:55:12.877030+00:00"
+        },
+        {
+          "id": "ffcb9330-8dd3-4c46-8ce5-91de02a8740f",
+          "last_name": "YANEZ",
+          "first_name": "ARNULFO",
+          "star": "17142",
+          "seniority_date": "06/03/2013",
+          "created_at": "2026-02-06T23:55:12.890745+00:00"
+        },
+        {
+          "id": "68504109-efb4-425b-a921-866f82ce39cc",
+          "last_name": "THOMPSON",
+          "first_name": "MICHAEL",
+          "star": "15823",
+          "seniority_date": "08/15/2014",
+          "created_at": "2026-02-06T23:55:12.878573+00:00"
+        },
+        {
+          "id": "200240a0-e476-474c-a4c7-e6a26c471e1d",
+          "last_name": "THOMPSON",
+          "first_name": "MICHAEL",
+          "star": "15823",
+          "seniority_date": "08/15/2014",
+          "created_at": "2026-02-06T23:55:12.891186+00:00"
+        },
+        {
+          "id": "93b6a8d7-1ea3-49e2-9c7c-b7bd92a10d02",
+          "last_name": "JOHNSON",
+          "first_name": "DAVID",
+          "star": "12456",
+          "seniority_date": "01/22/2015",
+          "created_at": "2026-02-06T23:55:12.879429+00:00"
+        },
+        {
+          "id": "26919766-7041-412b-8858-e5e8c21e45bf",
+          "last_name": "JOHNSON",
+          "first_name": "DAVID",
+          "star": "12456",
+          "seniority_date": "01/22/2015",
+          "created_at": "2026-02-06T23:55:12.892136+00:00"
+        },
+        {
+          "id": "f2e51951-8f3a-40a9-a2aa-bbf836bff205",
+          "last_name": "MARTINEZ",
+          "first_name": "MARIA",
+          "star": "18934",
+          "seniority_date": "03/10/2015",
+          "created_at": "2026-02-06T23:55:12.880156+00:00"
+        },
+        {
+          "id": "ee03ad80-b555-4f0c-94ba-280b32040086",
+          "last_name": "MARTINEZ",
+          "first_name": "MARIA",
+          "star": "18934",
+          "seniority_date": "03/10/2015",
+          "created_at": "2026-02-06T23:55:12.892851+00:00"
+        },
+        {
+          "id": "f5947bca-00f7-4ca1-a508-3be71c91fb24",
+          "last_name": "WILLIAMS",
+          "first_name": "JAMES",
+          "star": "14567",
+          "seniority_date": "07/04/2016",
+          "created_at": "2026-02-06T23:55:12.881434+00:00"
+        },
+        {
+          "id": "988e0b05-7111-4f45-9a3d-b5b2e60b84c9",
+          "last_name": "WILLIAMS",
+          "first_name": "JAMES",
+          "star": "14567",
+          "seniority_date": "07/04/2016",
+          "created_at": "2026-02-06T23:55:12.893404+00:00"
+        },
+        {
+          "id": "1ebc6d34-958a-4151-be69-e3657dc283c1",
+          "last_name": "CURET",
+          "first_name": "RAMON",
+          "star": "11035",
+          "seniority_date": "05/16/2017",
+          "created_at": "2026-02-06T23:55:12.881848+00:00"
+        },
+        {
+          "id": "c8726089-90fd-4a09-9fe1-05adcc29a593",
+          "last_name": "CURET",
+          "first_name": "RAMON",
+          "star": "11035",
+          "seniority_date": "05/16/2017",
+          "created_at": "2026-02-06T23:55:12.894301+00:00"
+        },
+        {
+          "id": "5943043f-1942-4912-9218-72b5cbc16b7e",
+          "last_name": "BROWN",
+          "first_name": "ROBERT",
+          "star": "16789",
+          "seniority_date": "09/20/2017",
+          "created_at": "2026-02-06T23:55:12.882865+00:00"
+        },
+        {
+          "id": "8c06cb11-afe3-4178-8d30-6da2303eecb3",
+          "last_name": "BROWN",
+          "first_name": "ROBERT",
+          "star": "16789",
+          "seniority_date": "09/20/2017",
+          "created_at": "2026-02-06T23:55:12.895051+00:00"
+        },
+        {
+          "id": "bebf85fa-52d6-4cc2-b358-53fc8f5aa104",
+          "last_name": "DAVIS",
+          "first_name": "PATRICIA",
+          "star": "13245",
+          "seniority_date": "02/14/2018",
+          "created_at": "2026-02-06T23:55:12.883368+00:00"
+        },
+        {
+          "id": "820916a7-5df9-4ecf-b1f9-f07b7d9d1cb8",
+          "last_name": "DAVIS",
+          "first_name": "PATRICIA",
+          "star": "13245",
+          "seniority_date": "02/14/2018",
+          "created_at": "2026-02-06T23:55:12.895575+00:00"
+        },
+        {
+          "id": "61678481-2bd0-408d-b494-c25831e03c09",
+          "last_name": "MILLER",
+          "first_name": "JENNIFER",
+          "star": "19876",
+          "seniority_date": "06/30/2018",
+          "created_at": "2026-02-06T23:55:12.883932+00:00"
+        },
+        {
+          "id": "7da612cb-15d8-41aa-8444-911061456709",
+          "last_name": "MILLER",
+          "first_name": "JENNIFER",
+          "star": "19876",
+          "seniority_date": "06/30/2018",
+          "created_at": "2026-02-06T23:55:12.896057+00:00"
+        },
+        {
+          "id": "44a5aecc-64a9-4a5a-9532-638892e49c7b",
+          "last_name": "WILSON",
+          "first_name": "LINDA",
+          "star": "11234",
+          "seniority_date": "11/11/2018",
+          "created_at": "2026-02-06T23:55:12.884293+00:00"
+        },
+        {
+          "id": "0a77134e-09cb-4199-8269-0e7eebf77bc9",
+          "last_name": "WILSON",
+          "first_name": "LINDA",
+          "star": "11234",
+          "seniority_date": "11/11/2018",
+          "created_at": "2026-02-06T23:55:12.896484+00:00"
+        },
+        {
+          "id": "823856c1-2b25-43fa-b31b-cbd455f91185",
+          "last_name": "MOORE",
+          "first_name": "ELIZABETH",
+          "star": "15678",
+          "seniority_date": "04/25/2019",
+          "created_at": "2026-02-06T23:55:12.884728+00:00"
+        },
+        {
+          "id": "aed7109c-8581-4379-bb6f-3c7403543ac9",
+          "last_name": "MOORE",
+          "first_name": "ELIZABETH",
+          "star": "15678",
+          "seniority_date": "04/25/2019",
+          "created_at": "2026-02-06T23:55:12.896921+00:00"
+        },
+        {
+          "id": "ce44bb48-35a8-41ee-9ed6-2991c43c688e",
+          "last_name": "TAYLOR",
+          "first_name": "BARBARA",
+          "star": "12890",
+          "seniority_date": "08/08/2019",
+          "created_at": "2026-02-06T23:55:12.885265+00:00"
+        },
+        {
+          "id": "37659826-a490-44d0-a09b-51411597032d",
+          "last_name": "TAYLOR",
+          "first_name": "BARBARA",
+          "star": "12890",
+          "seniority_date": "08/08/2019",
+          "created_at": "2026-02-06T23:55:12.897340+00:00"
+        },
+        {
+          "id": "b3f1b03b-1ff2-4d1b-8372-3bcf91f9d521",
+          "last_name": "ANDERSON",
+          "first_name": "SUSAN",
+          "star": "17456",
+          "seniority_date": "12/01/2019",
+          "created_at": "2026-02-06T23:55:12.885922+00:00"
+        },
+        {
+          "id": "ca58e82c-669c-4a9c-9b5b-a9c30364f6d6",
+          "last_name": "ANDERSON",
+          "first_name": "SUSAN",
+          "star": "17456",
+          "seniority_date": "12/01/2019",
+          "created_at": "2026-02-06T23:55:12.897776+00:00"
+        },
+        {
+          "id": "6f4e994e-b7a7-4f21-85ce-54fac7a7f96e",
+          "last_name": "THOMAS",
+          "first_name": "JESSICA",
+          "star": "14321",
+          "seniority_date": "03/15/2020",
+          "created_at": "2026-02-06T23:55:12.886361+00:00"
+        },
+        {
+          "id": "3e5b75a5-c921-4287-8d87-09079a5f1bc6",
+          "last_name": "THOMAS",
+          "first_name": "JESSICA",
+          "star": "14321",
+          "seniority_date": "03/15/2020",
+          "created_at": "2026-02-06T23:55:12.898300+00:00"
+        },
+        {
+          "id": "fa961cf2-b3eb-4c48-8887-f7c73b5b658e",
+          "last_name": "JACKSON",
+          "first_name": "SARAH",
+          "star": "18765",
+          "seniority_date": "07/22/2020",
+          "created_at": "2026-02-06T23:55:12.886781+00:00"
+        },
+        {
+          "id": "0ea2c21c-2343-49e0-a386-68b25f1a49d7",
+          "last_name": "JACKSON",
+          "first_name": "SARAH",
+          "star": "18765",
+          "seniority_date": "07/22/2020",
+          "created_at": "2026-02-06T23:55:12.898776+00:00"
+        },
+        {
+          "id": "e496a7ed-3bbf-4b06-bb8c-efc7a4ea38ac",
+          "last_name": "WHITE",
+          "first_name": "KAREN",
+          "star": "11567",
+          "seniority_date": "10/30/2020",
+          "created_at": "2026-02-06T23:55:12.887349+00:00"
+        },
+        {
+          "id": "c273647c-06bc-41d9-8ac2-712c2ccbf6a7",
+          "last_name": "WHITE",
+          "first_name": "KAREN",
+          "star": "11567",
+          "seniority_date": "10/30/2020",
+          "created_at": "2026-02-06T23:55:12.899224+00:00"
+        },
+        {
+          "id": "79bccf23-44ac-4039-9bdd-8f5b296c3b8a",
+          "last_name": "HARRIS",
+          "first_name": "NANCY",
+          "star": "16234",
+          "seniority_date": "02/18/2021",
+          "created_at": "2026-02-06T23:55:12.887777+00:00"
+        },
+        {
+          "id": "25a81e37-dbe6-4499-939e-ec2aee57496b",
+          "last_name": "HARRIS",
+          "first_name": "NANCY",
+          "star": "16234",
+          "seniority_date": "02/18/2021",
+          "created_at": "2026-02-06T23:55:12.899706+00:00"
+        },
+        {
+          "id": "ccbe69dd-f3c6-4882-b749-8351f10b5cce",
+          "last_name": "MARTIN",
+          "first_name": "BETTY",
+          "star": "13789",
+          "seniority_date": "05/05/2021",
+          "created_at": "2026-02-06T23:55:12.888119+00:00"
+        },
+        {
+          "id": "08d367d2-bcb6-48d2-a019-d9bdfe87202e",
+          "last_name": "MARTIN",
+          "first_name": "BETTY",
+          "star": "13789",
+          "seniority_date": "05/05/2021",
+          "created_at": "2026-02-06T23:55:12.900124+00:00"
+        },
+        {
+          "id": "eb14f621-1c97-44bf-a0aa-2eab328ae52e",
+          "last_name": "GARCIA",
+          "first_name": "MARGARET",
+          "star": "19012",
+          "seniority_date": "09/12/2021",
+          "created_at": "2026-02-06T23:55:12.888543+00:00"
+        },
+        {
+          "id": "0efd75f4-9c2e-41f4-9640-0deadaf34f4f",
+          "last_name": "GARCIA",
+          "first_name": "MARGARET",
+          "star": "19012",
+          "seniority_date": "09/12/2021",
+          "created_at": "2026-02-06T23:55:12.900576+00:00"
+        },
+        {
+          "id": "3a26df07-51f9-48eb-9fa5-07a10114b314",
+          "last_name": "CLARK",
+          "first_name": "SANDRA",
+          "star": "12345",
+          "seniority_date": "01/28/2022",
+          "created_at": "2026-02-06T23:55:12.888934+00:00"
+        },
+        {
+          "id": "ef35f15f-0981-4d87-ab55-81a7bb704e6d",
+          "last_name": "CLARK",
+          "first_name": "SANDRA",
+          "star": "12345",
+          "seniority_date": "01/28/2022",
+          "created_at": "2026-02-06T23:55:12.901033+00:00"
+        },
+        {
+          "id": "630e8706-48da-46fb-89bd-be57695eb7aa",
+          "last_name": "LEWIS",
+          "first_name": "ASHLEY",
+          "star": "15890",
+          "seniority_date": "04/14/2022",
+          "created_at": "2026-02-06T23:55:12.889804+00:00"
+        },
+        {
+          "id": "91af7620-968d-4781-bf16-65b44c2223e8",
+          "last_name": "LEWIS",
+          "first_name": "ASHLEY",
+          "star": "15890",
+          "seniority_date": "04/14/2022",
+          "created_at": "2026-02-06T23:55:12.901445+00:00"
+        },
+        {
+          "id": "ba73e2f5-9caf-407d-83c8-ce811467a898",
+          "last_name": "ROBINSON",
+          "first_name": "KIMBERLY",
+          "star": "17890",
+          "seniority_date": "08/21/2022",
+          "created_at": "2026-02-06T23:55:12.890278+00:00"
+        },
+        {
+          "id": "b03cd280-a6e8-47dd-8413-61c34928af8e",
+          "last_name": "ROBINSON",
+          "first_name": "KIMBERLY",
+          "star": "17890",
+          "seniority_date": "08/21/2022",
+          "created_at": "2026-02-06T23:55:12.901917+00:00"
+        },
+        {
+          "id": "24b96fde-1db1-4ef8-a8f7-ea673af41941",
+          "last_name": "WALKER",
+          "first_name": "EMILY",
+          "star": "14098",
+          "seniority_date": "11/09/2022",
+          "created_at": "2026-02-06T23:55:12.890824+00:00"
+        },
+        {
+          "id": "f2f51912-a2c4-4dfc-a550-75392121c95c",
+          "last_name": "WALKER",
+          "first_name": "EMILY",
+          "star": "14098",
+          "seniority_date": "11/09/2022",
+          "created_at": "2026-02-06T23:55:12.902364+00:00"
+        },
+        {
+          "id": "0c94be79-efaa-481a-978a-1c4e8f20051d",
+          "last_name": "PEREZ",
+          "first_name": "DONNA",
+          "star": "18234",
+          "seniority_date": "03/03/2023",
+          "created_at": "2026-02-06T23:55:12.891853+00:00"
+        },
+        {
+          "id": "485989ad-e08e-4a41-a628-ac6fbdf4d790",
+          "last_name": "PEREZ",
+          "first_name": "DONNA",
+          "star": "18234",
+          "seniority_date": "03/03/2023",
+          "created_at": "2026-02-06T23:55:12.902810+00:00"
+        }
+      ]
+    },
+    {
+      "test": "Create New Officer",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "id": "fe218042-935f-4322-a023-c533032b0a84",
+        "last_name": "TEST",
+        "first_name": "OFFICER",
+        "star": "99999",
+        "seniority_date": "01/01/2024",
+        "created_at": "2026-02-06T23:57:22.139818+00:00"
+      }
+    },
+    {
+      "test": "Update Officer",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "id": "fe218042-935f-4322-a023-c533032b0a84",
+        "last_name": "UPDATED",
+        "first_name": "OFFICER",
+        "star": "99999",
+        "seniority_date": "01/01/2024",
+        "created_at": "2026-02-06T23:57:22.139818+00:00"
+      }
+    },
+    {
+      "test": "Delete Officer",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "message": "Officer deleted"
+      }
+    },
+    {
+      "test": "Get RDO Sheet",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "id": "578653c4-feff-4494-bac5-ef32c7371dff",
+        "sheet_type": "rdo",
+        "sergeant_name": null,
+        "sergeant_star": null,
+        "rows": [
+          {
+            "id": "66a23d16-3f38-40fb-b922-c67d28460bda",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "62f9286c-1013-4d71-a5fe-36b4323a7c13",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "9d437419-869e-4554-842f-ed8514ed6296",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "4a13073d-1ac8-4a9e-ad65-3b4acd18a41e",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "e0ffd54c-c2e8-4535-9305-cf00722838a5",
+            "team": "C",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "dc2bcbbe-7fd2-479d-b354-cb3e2ceb4b85",
+            "team": "C",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          }
+        ],
+        "updated_at": "2026-02-06T23:55:40.406036+00:00"
+      }
+    },
+    {
+      "test": "Get DAYS_EXT Sheet",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "id": "53d03381-0b6a-42e6-b232-1422b8eb6e7e",
+        "sheet_type": "days_ext",
+        "sergeant_name": null,
+        "sergeant_star": null,
+        "rows": [
+          {
+            "id": "cca43073-6ed2-47f2-a4ce-eea1adc49483",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "3083c933-8ecc-4b2c-a972-26d1c87703d4",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "ca83d398-68b0-4709-979c-db4274d02748",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "0b340021-b62a-4e24-a2ee-3d359227e37e",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          }
+        ],
+        "updated_at": "2026-02-06T23:55:40.407120+00:00"
+      }
+    },
+    {
+      "test": "Get NIGHTS_EXT Sheet",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "id": "e410efe0-2fa6-418c-b3d2-669d13f34784",
+        "sheet_type": "nights_ext",
+        "sergeant_name": null,
+        "sergeant_star": null,
+        "rows": [
+          {
+            "id": "a81f7306-c9e4-40fc-afdd-661496e59c2a",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "8d967b87-0b04-47d3-9551-8fb30a44fdb4",
+            "team": "A",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "6b304100-61a4-42b3-976d-40ab79eaf7d1",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "6fd8c9c2-0d04-4ea1-92f1-740c421c4e30",
+            "team": "B",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "34fc3b81-39e5-4b71-90f6-c1086f11e129",
+            "team": "C",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          },
+          {
+            "id": "51abaf18-1dcc-4e14-acf2-720dd7ba8f41",
+            "team": "C",
+            "officer_number": null,
+            "deployment_location": null,
+            "assignment_a": null,
+            "assignment_b": null,
+            "assignment_c": null,
+            "assignment_d": null,
+            "assignment_e": null,
+            "assignment_f": null
+          }
+        ],
+        "updated_at": "2026-02-06T23:55:40.407686+00:00"
+      }
+    },
+    {
+      "test": "Reset All Sheets",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": {
+        "message": "All sheets reset successfully"
+      }
+    },
+    {
+      "test": "Get Version Logs",
+      "status": "PASS",
+      "response_code": 200,
+      "response_data": [
+        {
+          "id": "f3e86097-6594-4f5b-8cf2-b8cc970d5e52",
+          "version": "2026.02.06.2357",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:57:22.434351+00:00",
+          "notes": "Reset: All sheets reset to default"
+        },
+        {
+          "id": "df1737f3-2e09-493f-8d37-3cbb6899b124",
+          "version": "2026.02.06.2357",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:57:22.265822+00:00",
+          "notes": "Officer removed: Removed officer fe218042-935f-4322-a023-c533032b0a84"
+        },
+        {
+          "id": "72f05ff2-efaa-4e5b-9043-7d8d0a4eef89",
+          "version": "2026.02.06.2357",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:57:22.183923+00:00",
+          "notes": "Officer updated: Updated officer fe218042-935f-4322-a023-c533032b0a84"
+        },
+        {
+          "id": "957c7d48-8057-4e09-834f-3833d19d163e",
+          "version": "2026.02.06.2357",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:57:22.140750+00:00",
+          "notes": "Officer added: Added TEST, OFFICER"
+        },
+        {
+          "id": "735a61b6-66e1-44ae-a12f-18d12029a802",
+          "version": "2026.02.06.2355",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:55:40.408164+00:00",
+          "notes": "Reset: All sheets reset to default"
+        },
+        {
+          "id": "14a36997-9826-4c1a-be3d-547183f585d3",
+          "version": "2026.02.06.2355",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:55:12.903217+00:00",
+          "notes": "Seed: Seeded 25 officers"
+        },
+        {
+          "id": "19612b78-5bbf-4d44-858d-afc0f2ade0a6",
+          "version": "2026.02.06.2355",
+          "updated_by": "Admin",
+          "updated_at": "2026-02-06T23:55:12.892602+00:00",
+          "notes": "Seed: Seeded 25 officers"
+        }
+      ]
+    }
+  ]
+}
