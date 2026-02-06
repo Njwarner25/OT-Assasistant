@@ -1,0 +1,172 @@
+{
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a 'Tactical Bureaucracy' interface: high-density, authoritative, and print-perfect.",
+    "principles": [
+      "Density is Clarity: Maximize data per pixel without clutter.",
+      "Tactical Contrast: Use stark black/white with signal red for alerts.",
+      "Print First: The screen is just a preview of the paper.",
+      "Speed is Safety: Zero friction inputs for tired officers."
+    ]
+  },
+  "theme": {
+    "mode": "light",
+    "archetype": "Swiss & High-Contrast (Tactical Variant)",
+    "emotional_tone": "Authoritative, Reliable, Efficient",
+    "visual_mood": "White paper, crisp black ink, navy blue authority, alert red"
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "Chivo, sans-serif",
+        "weights": ["700", "900"],
+        "usage": "Page titles, Section headers, Sheet labels"
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "weights": ["400", "500", "600"],
+        "usage": "UI labels, Instructions, Button text"
+      },
+      "data": {
+        "family": "JetBrains Mono, monospace",
+        "weights": ["400", "500"],
+        "usage": "Roster data, Star numbers, Dates, Times"
+      }
+    },
+    "scale": {
+      "h1": "text-3xl font-black tracking-tight text-slate-900 uppercase",
+      "h2": "text-xl font-bold tracking-tight text-slate-800 uppercase border-b-2 border-slate-900 pb-1",
+      "h3": "text-sm font-bold text-slate-500 uppercase tracking-wider",
+      "body": "text-sm text-slate-700 leading-relaxed",
+      "data": "text-xs font-mono text-slate-900",
+      "label": "text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": "#0F172A",
+      "primary_foreground": "#F8FAFC",
+      "secondary": "#F1F5F9",
+      "secondary_foreground": "#0F172A",
+      "accent": "#E2E8F0",
+      "accent_foreground": "#0F172A",
+      "destructive": "#EF4444",
+      "destructive_foreground": "#FFFFFF",
+      "muted": "#F8FAFC",
+      "muted_foreground": "#64748B",
+      "border": "#CBD5E1",
+      "input": "#E2E8F0",
+      "ring": "#0F172A",
+      "background": "#FFFFFF",
+      "foreground": "#0F172A"
+    },
+    "usage_rules": {
+      "alerts": "Use 'bg-red-50 border-red-200 text-red-700' for duplicate officer warnings.",
+      "headers": "Use 'bg-slate-100' for table headers to distinguish from data.",
+      "selection": "Use 'bg-slate-900 text-white' for active tab states.",
+      "borders": "All data grids must have 'border border-slate-300' for print clarity."
+    }
+  },
+  "layout": {
+    "grid_system": "Bento Mode B (High Density)",
+    "spacing": {
+      "container": "max-w-[1400px] mx-auto p-4 md:p-8",
+      "section_gap": "gap-8",
+      "component_gap": "gap-4",
+      "internal_padding": "p-2"
+    },
+    "print_styles": "@media print { body { -webkit-print-color-adjust: exact; } .no-print { display: none; } .page-break { page-break-before: always; } }"
+  },
+  "components": {
+    "roster_sheet": {
+      "path": "/app/frontend/src/components/RosterSheet.js",
+      "description": "The core spreadsheet component. Must be dense and printable.",
+      "specs": [
+        "Use HTML <table> or CSS Grid for perfect alignment.",
+        "Sticky header for long lists (screen only).",
+        "Row height: 'h-10' (dense).",
+        "Font: JetBrains Mono for all cell data.",
+        "Borders: 'border-collapse border border-slate-300'.",
+        "Zebra striping: 'even:bg-slate-50' (optional, check print contrast)."
+      ]
+    },
+    "officer_select": {
+      "path": "/app/frontend/src/components/OfficerSelect.js",
+      "description": "Combobox for selecting officers.",
+      "specs": [
+        "Use Shadcn Combobox (Command + Popover).",
+        "Format: 'LAST, FIRST — STAR — MM/DD/YYYY'.",
+        "Searchable by Name or Star Number.",
+        "Must show 'Seniority Date' in the dropdown list for context."
+      ]
+    },
+    "admin_panel": {
+      "path": "/app/frontend/src/pages/AdminPanel.js",
+      "description": "CRUD for officers.",
+      "specs": [
+        "Simple list view with 'Add Officer' button top-right.",
+        "Edit/Delete actions on each row.",
+        "Bulk import (CSV) if possible (optional feature).",
+        "Secure route (require auth)."
+      ]
+    },
+    "login_screen": {
+      "path": "/app/frontend/src/pages/Login.js",
+      "description": "Simple, secure entry point.",
+      "specs": [
+        "Background: Subtle police texture or clean slate.",
+        "Card: Centered, white, sharp shadow.",
+        "Logo: 'OT ROSTER' text in Chivo Black."
+      ]
+    }
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "login_background",
+        "url": "https://images.unsplash.com/photo-1613264520739-c2eb038e8404?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "description": "Police hat on box - use with heavy overlay/blur for login background."
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "preferred": ["Shield", "Users", "FileSpreadsheet", "Printer", "LogOut", "AlertTriangle", "CheckCircle"]
+    }
+  },
+  "functionality_rules": {
+    "duplicate_detection": {
+      "logic": "If an officer ID is selected in more than one row across ANY active sheet (or same sheet), highlight BOTH rows in Red.",
+      "visual": "Add class 'bg-red-100 text-red-900 border-red-500' to the row."
+    },
+    "auto_populate": {
+      "logic": "On selection, immediately fill 'STAR', 'SEN DATE', and 'TIMESTAMP' columns.",
+      "timestamp_format": "HH:mm:ss"
+    },
+    "sorting": {
+      "logic": "Dropdown list MUST be sorted by Seniority Date (Oldest date = Most Senior = Top of list)."
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'lucide-react', 'date-fns', 'jspdf', 'jspdf-autotable' (for PDF export).",
+    "2. FONTS: Add 'Chivo', 'Inter', and 'JetBrains Mono' via Google Fonts in index.html or CSS import.",
+    "3. ROUTING: Use 'react-router-dom'. Routes: '/' (Login), '/dashboard' (Main), '/admin' (Admin).",
+    "4. STATE: Use a global state (Context or Zustand) to hold the 'Roster Data' so duplicate detection works across tabs.",
+    "5. PRINTING: Create a specific 'PrintView' component or use CSS media queries to hide sidebar/buttons when printing.",
+    "6. MOCK DATA: Create a robust 'mockOfficers' list with realistic names, star numbers, and seniority dates for testing.",
+    "7. AUTH: Hardcode 'Admin' / '123456' for MVP login.",
+    "8. DO NOT use 'framer-motion' for the grid itself (performance). Use it only for page transitions or modal entries."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) sparingly (only for modals).",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles: sharp corners ('rounded-sm') fit the tactical theme better than pill shapes.",
+    "NEVER use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable (except in the dense data grid).",
+    "All interactive and key informational elements MUST include 'data-testid' attribute."
+  ]
+}
