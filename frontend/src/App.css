@@ -1,34 +1,93 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.App {
+  min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Print Styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Ensure table borders print */
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #000 !important;
+  }
+
+  /* Reset backgrounds for printing */
+  .print\\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\\:border-black {
+    border-color: #000 !important;
+  }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Custom scrollbar for dropdowns */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
 }
 
-.App-link {
-    color: #61dafb;
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Font family overrides */
+.font-\\[\\'Chivo\\'\\] {
+  font-family: 'Chivo', sans-serif;
+}
+
+/* Ensure monospace font is applied consistently */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Input focus styles */
+input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #0f172a;
+}
+
+/* Button hover transitions */
+button {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Table cell alignment */
+td, th {
+  vertical-align: middle;
+}
+
+/* Dropdown z-index management */
+.relative {
+  isolation: isolate;
 }
