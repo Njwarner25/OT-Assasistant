@@ -166,18 +166,26 @@ const RosterSheet = ({ day, sheetType }) => {
   // Check if officer is already assigned on this day (any sheet type)
   const isOfficerOnDay = useCallback((officerId) => {
     if (!officerId) return false;
+    // Check global sheets for this day
     const daySheets = sheets[day];
-    if (!daySheets) return false;
-    for (const type of Object.keys(daySheets)) {
-      const sheet = daySheets[type];
-      if (sheet?.rows) {
-        for (const row of sheet.rows) {
-          if (row.assignment_a?.officer_id === officerId) return true;
+    if (daySheets) {
+      for (const type of Object.keys(daySheets)) {
+        const sheet = daySheets[type];
+        if (sheet?.rows) {
+          for (const row of sheet.rows) {
+            if (row.assignment_a?.officer_id === officerId) return true;
+          }
         }
       }
     }
+    // Also check local sheet (may have unsaved changes)
+    if (localSheet?.rows) {
+      for (const row of localSheet.rows) {
+        if (row.assignment_a?.officer_id === officerId) return true;
+      }
+    }
     return false;
-  }, [sheets, day]);
+  }, [sheets, day, localSheet]);
 
   const handleOfficerSelect = async (rowIndex, officer) => {
     if (!localSheet || isSheetLocked()) return;
