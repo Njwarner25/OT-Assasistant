@@ -194,6 +194,18 @@ export const AppProvider = ({ children }) => {
     }
   }, [fetchSheet]);
 
+  const setAutoLock = useCallback(async (day, sheetType, autoLockTime, autoLockEnabled) => {
+    try {
+      await axios.post(`${API}/sheets/${day}/${sheetType}/set-auto-lock`, {
+        auto_lock_time: autoLockTime,
+        auto_lock_enabled: autoLockEnabled
+      });
+      await fetchSheet(day, sheetType);
+    } catch (error) {
+      console.error('Error setting auto-lock:', error);
+    }
+  }, [fetchSheet]);
+
   const seedOfficers = useCallback(async () => {
     try {
       await axios.post(`${API}/seed`);
