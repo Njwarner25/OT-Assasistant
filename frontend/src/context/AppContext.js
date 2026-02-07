@@ -249,9 +249,11 @@ export const AppProvider = ({ children }) => {
     return ids;
   }, [sheets]);
 
-  const checkDuplicate = useCallback((officerId) => {
+  const checkDuplicate = useCallback((officerId, day) => {
+    if (!officerId || !day) return false;
     let count = 0;
-    Object.values(sheets).forEach(daySheets => {
+    const daySheets = sheets[day];
+    if (daySheets) {
       Object.values(daySheets).forEach(sheet => {
         if (sheet?.rows) {
           sheet.rows.forEach(row => {
@@ -261,7 +263,7 @@ export const AppProvider = ({ children }) => {
           });
         }
       });
-    });
+    }
     return count > 1;
   }, [sheets]);
 

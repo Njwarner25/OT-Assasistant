@@ -250,7 +250,7 @@ const RosterSheet = ({ day, sheetType }) => {
 
   const isDuplicate = (officerId) => {
     if (!officerId) return false;
-    return checkDuplicate(officerId);
+    return checkDuplicate(officerId, day);
   };
 
   const handleLockToggle = async () => {
