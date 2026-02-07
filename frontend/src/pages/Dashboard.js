@@ -9,7 +9,6 @@ const Dashboard = () => {
   const [activeType, setActiveType] = useState('rdo');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetStatus, setResetStatus] = useState(null);
-  const [exportStatus, setExportStatus] = useState(null);
   const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
   const navigate = useNavigate();
   const printRef = useRef(null);
