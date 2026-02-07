@@ -93,6 +93,8 @@ class OTSheet(BaseModel):
     locked: bool = False
     locked_at: Optional[str] = None
     locked_by: Optional[str] = None
+    auto_lock_time: Optional[str] = None  # ISO format datetime for auto-lock
+    auto_lock_enabled: bool = False
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class LoginRequest(BaseModel):
