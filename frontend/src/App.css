@@ -9,10 +9,15 @@
   body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    background: white !important;
   }
 
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
+  }
+
+  .hidden.print\:block {
+    display: block !important;
   }
 
   .no-print {
@@ -33,12 +38,18 @@
   }
 
   /* Reset backgrounds for printing */
-  .print\\:bg-white {
+  .print\:bg-white {
     background-color: white !important;
   }
 
-  .print\\:border-black {
+  .print\:border-black {
     border-color: #000 !important;
+  }
+
+  /* Page settings */
+  @page {
+    size: landscape;
+    margin: 0.5in;
   }
 }
 
