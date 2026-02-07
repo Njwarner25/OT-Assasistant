@@ -28,34 +28,42 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchSheet = useCallback(async (sheetType) => {
+  const fetchSheet = useCallback(async (day, sheetType) => {
     try {
-      const response = await axios.get(`${API}/sheets/${sheetType}`);
-      setSheets(prev => ({ ...prev, [sheetType]: response.data }));
+      const response = await axios.get(`${API}/sheets/${day}/${sheetType}`);
+      setSheets(prev => ({
+        ...prev,
+        [day]: { ...prev[day], [sheetType]: response.data }
+      }));
       return response.data;
     } catch (error) {
-      console.error(`Error fetching ${sheetType} sheet:`, error);
+      console.error(`Error fetching ${day}/${sheetType} sheet:`, error);
     }
   }, []);
 
-  const updateSheet = useCallback(async (sheetType, sheetData) => {
+  const updateSheet = useCallback(async (day, sheetType, sheetData) => {
     try {
-      const response = await axios.put(`${API}/sheets/${sheetType}`, sheetData);
-      setSheets(prev => ({ ...prev, [sheetType]: response.data }));
+      const response = await axios.put(`${API}/sheets/${day}/${sheetType}`, sheetData);
+      setSheets(prev => ({
+        ...prev,
+        [day]: { ...prev[day], [sheetType]: response.data }
+      }));
       return response.data;
     } catch (error) {
-      console.error(`Error updating ${sheetType} sheet:`, error);
+      console.error(`Error updating ${day}/${sheetType} sheet:`, error);
     }
   }, []);
 
   const resetAllSheets = useCallback(async () => {
     try {
       await axios.post(`${API}/sheets/reset`);
-      await Promise.all([
-        fetchSheet('rdo'),
-        fetchSheet('days_ext'),
-        fetchSheet('nights_ext')
-      ]);
+      const days = ['friday', 'saturday', 'sunday'];
+      const types = ['rdo', 'days_ext', 'nights_ext'];
+      for (const day of days) {
+        for (const type of types) {
+          await fetchSheet(day, type);
+        }
+      }
       return true;
     } catch (error) {
       console.error('Error resetting sheets:', error);
