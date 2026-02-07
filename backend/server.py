@@ -216,7 +216,7 @@ async def reset_all_sheets():
     sheet_types = ["rdo", "days_ext", "nights_ext"]
     
     # All sheets have the same team structure
-    teams = ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE']
+    teams = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E']
     
     for day in days:
         for sheet_type in sheet_types:
