@@ -515,8 +515,11 @@ const RosterSheet = ({ day, sheetType }) => {
             {localSheet.rows.map((row, rowIndex) => {
               const assignment = row.assignment_a;
               const hasDuplicate = isDuplicate(assignment?.officer_id);
+              const isEntryFilled = !!assignment?.officer_id;
+              const isEntryLocked = isEntryFilled && !isAuthenticated;
+              const rowBg = hasDuplicate ? 'bg-red-100' : isEntryFilled ? 'bg-green-50' : (rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50');
               return (
-                <tr key={row.id} className="even:bg-slate-50 print:even:bg-white hover:bg-slate-100 print:hover:bg-white" data-testid={`row-${rowIndex}`}>
+                <tr key={row.id} className={`${rowBg} print:bg-white`} data-testid={`row-${rowIndex}`}>
                   <td className="p-2 border border-slate-300 text-center font-bold text-slate-700 print:border-black">
                     {row.team}
                   </td>
@@ -525,8 +528,8 @@ const RosterSheet = ({ day, sheetType }) => {
                       type="text"
                       value={row.officer_number || ''}
                       onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
-                      disabled={locked}
-                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      disabled={locked || isEntryLocked}
+                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
                       data-testid={`officer-number-${rowIndex}`}
                     />
                   </td>
@@ -535,12 +538,12 @@ const RosterSheet = ({ day, sheetType }) => {
                       type="text"
                       value={row.deployment_location || ''}
                       onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
-                      disabled={locked}
-                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      disabled={locked || isEntryLocked}
+                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
                       data-testid={`deployment-location-${rowIndex}`}
                     />
                   </td>
-                  <td className={`p-1 border border-slate-300 print:border-black ${hasDuplicate ? 'bg-red-100 text-red-900' : ''}`}>
+                  <td className={`p-1 border border-slate-300 print:border-black ${hasDuplicate ? 'text-red-900' : ''}`}>
                     <div className="flex items-center gap-1">
                       {hasDuplicate && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />}
                       <OfficerSelect
@@ -548,18 +551,18 @@ const RosterSheet = ({ day, sheetType }) => {
                         selectedOfficerId={assignment?.officer_id}
                         selectedAssignment={assignment}
                         onSelect={(officer) => handleOfficerSelect(rowIndex, officer)}
-                        disabled={locked}
+                        disabled={locked || isEntryLocked}
                         testId={`select-${rowIndex}`}
                       />
                     </div>
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black`}>
                     {assignment?.star || ''}
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black`}>
                     {assignment?.seniority || ''}
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-600 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                  <td className={`p-2 border border-slate-300 text-slate-600 print:border-black`}>
                     {assignment?.timestamp || ''}
                   </td>
                 </tr>
