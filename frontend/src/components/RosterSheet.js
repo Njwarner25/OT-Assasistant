@@ -53,6 +53,15 @@ const RosterSheet = ({ sheetType }) => {
     const updatedRows = [...localSheet.rows];
     let assignment = null;
     
+    // Get current time in CST (Central Standard Time) - military format
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      timeZone: 'America/Chicago' 
+    });
+    
     if (officer) {
       if (officer.isManual) {
         // Manual entry - just use the name they typed
@@ -61,7 +70,7 @@ const RosterSheet = ({ sheetType }) => {
           officer_display: officer.last_name,
           star: '',
           seniority: '',
-          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          timestamp: timestamp,
           isManual: true
         };
       } else {
@@ -71,7 +80,7 @@ const RosterSheet = ({ sheetType }) => {
           officer_display: `${officer.last_name}, ${officer.first_name} — ${officer.star} — ${officer.seniority_date}`,
           star: officer.star,
           seniority: officer.seniority_date,
-          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          timestamp: timestamp,
           isManual: false
         };
       }
