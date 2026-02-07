@@ -18,6 +18,7 @@ export const AppProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
   const [versionLogs, setVersionLogs] = useState([]);
+  const [bumpedOfficers, setBumpedOfficers] = useState([]);
 
   const fetchOfficers = useCallback(async () => {
     try {
