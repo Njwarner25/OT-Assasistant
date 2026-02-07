@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import OfficerSelect from './OfficerSelect';
-import { AlertTriangle, Lock, LockOpen } from 'lucide-react';
+import { AlertTriangle, Lock, LockOpen, Clock, XCircle } from 'lucide-react';
 
 const SHEET_CONFIG = {
   rdo: {
@@ -35,9 +35,55 @@ const parseSeniorityDate = (dateStr) => {
   return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
 };
 
+// Helper to format datetime for display in CST
+const formatDeadline = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.toLocaleString('en-US', {
+    timeZone: 'America/Chicago',
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }) + ' CST';
+};
+
+// Check if deadline has passed
+const isDeadlinePassed = (isoString) => {
+  if (!isoString) return false;
+  const deadline = new Date(isoString);
+  const now = new Date();
+  return now > deadline;
+};
+
+// Get time remaining until deadline
+const getTimeRemaining = (isoString) => {
+  if (!isoString) return null;
+  const deadline = new Date(isoString);
+  const now = new Date();
+  const diff = deadline - now;
+  
+  if (diff <= 0) return null;
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h remaining`;
+  }
+  return `${hours}h ${minutes}m remaining`;
+};
+
 const RosterSheet = ({ day, sheetType }) => {
-  const { sheets, updateSheet, officers, checkDuplicate, addBumpedOfficer, isAuthenticated, lockSheet, unlockSheet } = useApp();
+  const { sheets, updateSheet, officers, checkDuplicate, addBumpedOfficer, isAuthenticated, lockSheet, unlockSheet, setAutoLock } = useApp();
   const [localSheet, setLocalSheet] = useState(null);
+  const [showAutoLockModal, setShowAutoLockModal] = useState(false);
+  const [autoLockDate, setAutoLockDate] = useState('');
+  const [autoLockTime, setAutoLockTime] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState(null);
   const config = SHEET_CONFIG[sheetType];
 
   useEffect(() => {
@@ -46,19 +92,41 @@ const RosterSheet = ({ day, sheetType }) => {
     }
   }, [sheets, day, sheetType]);
 
+  // Update time remaining every minute
+  useEffect(() => {
+    if (localSheet?.auto_lock_enabled && localSheet?.auto_lock_time) {
+      const updateRemaining = () => {
+        setTimeRemaining(getTimeRemaining(localSheet.auto_lock_time));
+      };
+      updateRemaining();
+      const interval = setInterval(updateRemaining, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [localSheet?.auto_lock_enabled, localSheet?.auto_lock_time]);
+
   const saveSheet = useCallback(async (updatedSheet) => {
     setLocalSheet(updatedSheet);
     await updateSheet(day, sheetType, updatedSheet);
   }, [day, sheetType, updateSheet]);
 
+  // Check if sheet is locked (either manually or auto-locked)
+  const isSheetLocked = useCallback(() => {
+    if (!localSheet) return false;
+    if (localSheet.locked) return true;
+    if (localSheet.auto_lock_enabled && localSheet.auto_lock_time) {
+      return isDeadlinePassed(localSheet.auto_lock_time);
+    }
+    return false;
+  }, [localSheet]);
+
   const handleSergeantChange = (field, value) => {
-    if (!localSheet || localSheet.locked) return;
+    if (!localSheet || isSheetLocked()) return;
     const updated = { ...localSheet, [field]: value };
     saveSheet(updated);
   };
 
   const handleRowChange = (rowIndex, field, value) => {
-    if (!localSheet || localSheet.locked) return;
+    if (!localSheet || isSheetLocked()) return;
     const updatedRows = [...localSheet.rows];
     updatedRows[rowIndex] = { ...updatedRows[rowIndex], [field]: value };
     const updated = { ...localSheet, rows: updatedRows };
@@ -99,7 +167,7 @@ const RosterSheet = ({ day, sheetType }) => {
   }, [getAllAssignments]);
 
   const handleOfficerSelect = async (rowIndex, assignmentKey, officer) => {
-    if (!localSheet || localSheet.locked) return;
+    if (!localSheet || isSheetLocked()) return;
     
     const updatedRows = [...localSheet.rows];
     let assignment = null;
@@ -196,12 +264,33 @@ const RosterSheet = ({ day, sheetType }) => {
     }
   };
 
+  const handleSetAutoLock = async () => {
+    if (autoLockDate && autoLockTime) {
+      // Combine date and time into ISO string
+      const dateTimeStr = `${autoLockDate}T${autoLockTime}:00`;
+      const localDate = new Date(dateTimeStr);
+      const isoString = localDate.toISOString();
+      
+      await setAutoLock(day, sheetType, isoString, true);
+      setShowAutoLockModal(false);
+      setAutoLockDate('');
+      setAutoLockTime('');
+    }
+  };
+
+  const handleDisableAutoLock = async () => {
+    await setAutoLock(day, sheetType, null, false);
+    setShowAutoLockModal(false);
+  };
+
   if (!localSheet) {
     return <div className="text-slate-500">Loading sheet...</div>;
   }
 
   const filledSlots = getFilledSlotCount();
   const isSheetFull = filledSlots >= config.maxSlots;
+  const locked = isSheetLocked();
+  const deadlinePassed = localSheet.auto_lock_enabled && localSheet.auto_lock_time && isDeadlinePassed(localSheet.auto_lock_time);
 
   return (
     <div className="bg-white rounded-sm border border-slate-300 shadow-sm print:shadow-none print:border-black" data-testid={`roster-sheet-${day}-${sheetType}`}>
@@ -218,44 +307,87 @@ const RosterSheet = ({ day, sheetType }) => {
               {filledSlots}/{config.maxSlots} Slots Filled
             </span>
             
-            {localSheet.locked && (
+            {/* Auto-lock countdown */}
+            {localSheet.auto_lock_enabled && localSheet.auto_lock_time && !deadlinePassed && timeRemaining && (
+              <span className="flex items-center gap-1 text-xs font-semibold uppercase px-2 py-1 rounded bg-orange-100 text-orange-700">
+                <Clock className="w-3 h-3" />
+                {timeRemaining}
+              </span>
+            )}
+            
+            {locked && (
               <span className="flex items-center gap-1 text-xs font-semibold uppercase px-2 py-1 rounded bg-red-100 text-red-700">
                 <Lock className="w-3 h-3" />
-                Locked
+                {deadlinePassed ? 'Deadline Passed' : 'Locked'}
               </span>
             )}
             
             {isAuthenticated && (
-              <button
-                onClick={handleLockToggle}
-                className={`flex items-center gap-1 px-3 py-1 text-xs font-semibold uppercase rounded transition-colors ${
-                  localSheet.locked 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
-                data-testid="lock-toggle-button"
-              >
-                {localSheet.locked ? (
-                  <>
-                    <LockOpen className="w-3 h-3" />
-                    Unlock
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3 h-3" />
-                    Lock
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAutoLockModal(true)}
+                  className="flex items-center gap-1 px-3 py-1 text-xs font-semibold uppercase rounded bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                  data-testid="auto-lock-button"
+                >
+                  <Clock className="w-3 h-3" />
+                  Set Deadline
+                </button>
+                <button
+                  onClick={handleLockToggle}
+                  className={`flex items-center gap-1 px-3 py-1 text-xs font-semibold uppercase rounded transition-colors ${
+                    localSheet.locked 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-red-600 text-white hover:bg-red-700'
+                  }`}
+                  data-testid="lock-toggle-button"
+                >
+                  {localSheet.locked ? (
+                    <>
+                      <LockOpen className="w-3 h-3" />
+                      Unlock
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3 h-3" />
+                      Lock Now
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>
         
-        {/* Locked Warning */}
-        {localSheet.locked && (
+        {/* Deadline Passed Warning */}
+        {deadlinePassed && (
+          <div className="mb-4 p-3 bg-red-100 border-2 border-red-400 rounded text-red-800 flex items-center gap-3">
+            <XCircle className="w-6 h-6 flex-shrink-0" />
+            <div>
+              <div className="font-bold text-sm">DEADLINE HAS PASSED</div>
+              <div className="text-xs mt-1">
+                Overtime entries closed at {formatDeadline(localSheet.auto_lock_time)}. 
+                You missed the deadline and can no longer sign up for this shift.
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Manual Locked Warning */}
+        {localSheet.locked && !deadlinePassed && (
           <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center gap-2">
             <Lock className="w-4 h-4" />
             This sheet is locked. Only admins can unlock it to make changes.
+          </div>
+        )}
+        
+        {/* Auto-lock scheduled notice */}
+        {localSheet.auto_lock_enabled && localSheet.auto_lock_time && !deadlinePassed && (
+          <div className="mb-4 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span>
+              <strong>Entry Deadline:</strong> {formatDeadline(localSheet.auto_lock_time)}
+              {timeRemaining && <span className="ml-2">({timeRemaining})</span>}
+            </span>
           </div>
         )}
         
@@ -267,8 +399,8 @@ const RosterSheet = ({ day, sheetType }) => {
               type="text"
               value={localSheet.sergeant_name || ''}
               onChange={(e) => handleSergeantChange('sergeant_name', e.target.value)}
-              disabled={localSheet.locked}
-              className={`px-3 py-1 border border-slate-300 rounded-sm text-sm font-mono w-48 print:border-black ${localSheet.locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+              disabled={locked}
+              className={`px-3 py-1 border border-slate-300 rounded-sm text-sm font-mono w-48 print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
               placeholder="Enter name"
               data-testid="sergeant-name-input"
             />
@@ -279,8 +411,8 @@ const RosterSheet = ({ day, sheetType }) => {
               type="text"
               value={localSheet.sergeant_star || ''}
               onChange={(e) => handleSergeantChange('sergeant_star', e.target.value)}
-              disabled={localSheet.locked}
-              className={`px-3 py-1 border border-slate-300 rounded-sm text-sm font-mono w-24 print:border-black ${localSheet.locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+              disabled={locked}
+              className={`px-3 py-1 border border-slate-300 rounded-sm text-sm font-mono w-24 print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
               placeholder="#####"
               data-testid="sergeant-star-input"
             />
@@ -290,6 +422,81 @@ const RosterSheet = ({ day, sheetType }) => {
           </div>
         </div>
       </div>
+
+      {/* Auto-Lock Modal */}
+      {showAutoLockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-sm shadow-xl p-6 w-96 max-w-[90vw]">
+            <h3 className="text-lg font-bold text-slate-800 uppercase mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Set Entry Deadline
+            </h3>
+            
+            {localSheet.auto_lock_enabled && localSheet.auto_lock_time && (
+              <div className="mb-4 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                Current deadline: {formatDeadline(localSheet.auto_lock_time)}
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                  Deadline Date
+                </label>
+                <input
+                  type="date"
+                  value={autoLockDate}
+                  onChange={(e) => setAutoLockDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm"
+                  data-testid="auto-lock-date"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                  Deadline Time (CST)
+                </label>
+                <input
+                  type="time"
+                  value={autoLockTime}
+                  onChange={(e) => setAutoLockTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm"
+                  data-testid="auto-lock-time"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Officers will see a countdown and won't be able to sign up after this deadline.
+              </p>
+            </div>
+            
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleSetAutoLock}
+                disabled={!autoLockDate || !autoLockTime}
+                className="flex-1 py-2 bg-orange-600 text-white font-semibold text-sm rounded-sm hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                data-testid="confirm-auto-lock"
+              >
+                Set Deadline
+              </button>
+              {localSheet.auto_lock_enabled && (
+                <button
+                  onClick={handleDisableAutoLock}
+                  className="px-4 py-2 bg-red-100 text-red-700 font-semibold text-sm rounded-sm hover:bg-red-200 transition-colors"
+                  data-testid="disable-auto-lock"
+                >
+                  Remove
+                </button>
+              )}
+              <button
+                onClick={() => setShowAutoLockModal(false)}
+                className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold text-sm rounded-sm hover:bg-slate-300 transition-colors"
+                data-testid="cancel-auto-lock"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Data Table */}
       <div className="overflow-x-auto">
@@ -320,8 +527,8 @@ const RosterSheet = ({ day, sheetType }) => {
                     type="text"
                     value={row.officer_number || ''}
                     onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
-                    disabled={localSheet.locked}
-                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${localSheet.locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                    disabled={locked}
+                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                     data-testid={`officer-number-${rowIndex}`}
                   />
                 </td>
@@ -330,8 +537,8 @@ const RosterSheet = ({ day, sheetType }) => {
                     type="text"
                     value={row.deployment_location || ''}
                     onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
-                    disabled={localSheet.locked}
-                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${localSheet.locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                    disabled={locked}
+                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                     data-testid={`deployment-location-${rowIndex}`}
                   />
                 </td>
@@ -348,7 +555,7 @@ const RosterSheet = ({ day, sheetType }) => {
                             selectedOfficerId={assignment?.officer_id}
                             selectedAssignment={assignment}
                             onSelect={(officer) => handleOfficerSelect(rowIndex, col, officer)}
-                            disabled={localSheet.locked}
+                            disabled={locked}
                             testId={`select-${rowIndex}-${col}`}
                           />
                         </div>
