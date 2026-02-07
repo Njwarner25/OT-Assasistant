@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
 import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('rdo');
