@@ -12,9 +12,9 @@ export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [officers, setOfficers] = useState([]);
   const [sheets, setSheets] = useState({
-    rdo: null,
-    days_ext: null,
-    nights_ext: null
+    friday: { rdo: null, days_ext: null, nights_ext: null },
+    saturday: { rdo: null, days_ext: null, nights_ext: null },
+    sunday: { rdo: null, days_ext: null, nights_ext: null }
   });
   const [loading, setLoading] = useState(true);
   const [versionLogs, setVersionLogs] = useState([]);
