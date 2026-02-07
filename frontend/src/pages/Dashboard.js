@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
 import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('rdo');
   const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
   const navigate = useNavigate();
+  const printRef = useRef(null);
 
   const handleAdminClick = () => {
     if (isAuthenticated) {
@@ -29,48 +28,110 @@ const Dashboard = () => {
     window.print();
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const sheet = sheets[activeTab];
-    if (!sheet) return;
+    if (!sheet) {
+      alert('No sheet data to export');
+      return;
+    }
 
-    const doc = new jsPDF('landscape');
-    const sheetTitles = {
-      rdo: 'OVERTIME WORKING — RDO 2000–0500',
-      days_ext: 'OVERTIME WORKING — 4HR EXT TOUR (2000–2100 DAYS EXT)',
-      nights_ext: 'OVERTIME WORKING — 4HR EXT TOUR (1600–2000 NIGHTS EXT)'
-    };
+    try {
+      // Dynamic import to avoid SSR issues
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+      
+      const doc = new jsPDF('landscape');
+      const sheetTitles = {
+        rdo: 'OVERTIME WORKING - RDO 2000-0500',
+        days_ext: 'OVERTIME WORKING - 4HR EXT TOUR (2000-2100 DAYS EXT)',
+        nights_ext: 'OVERTIME WORKING - 4HR EXT TOUR (1600-2000 NIGHTS EXT)'
+      };
 
-    doc.setFontSize(16);
-    doc.text(sheetTitles[activeTab], 14, 20);
-    
-    doc.setFontSize(10);
-    doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
-    doc.text(`Generated: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST`, 14, 36);
+      // Title
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(sheetTitles[activeTab], 14, 20);
+      
+      // Sergeant info
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
+      
+      // Timestamp
+      const timestamp = new Date().toLocaleString('en-US', { 
+        timeZone: 'America/Chicago', 
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      doc.text(`Generated: ${timestamp} CST`, 14, 36);
 
-    const headers = ['Team', 'Officer #', 'Location', 'A', 'Star', 'Sen', 'Time', 'B', 'Star', 'Sen', 'Time'];
-    const rows = sheet.rows.map(row => [
-      row.team,
-      row.officer_number || '',
-      row.deployment_location || '',
-      row.assignment_a?.officer_display?.split(' — ')[0] || '',
-      row.assignment_a?.star || '',
-      row.assignment_a?.seniority || '',
-      row.assignment_a?.timestamp || '',
-      row.assignment_b?.officer_display?.split(' — ')[0] || '',
-      row.assignment_b?.star || '',
-      row.assignment_b?.seniority || '',
-      row.assignment_b?.timestamp || ''
-    ]);
+      // Table headers
+      const headers = ['Team', 'Off#', 'Location', 'Officer A', 'Star', 'Sen', 'Time', 'Officer B', 'Star', 'Sen', 'Time'];
+      
+      // Table rows
+      const rows = sheet.rows.map(row => {
+        const nameA = row.assignment_a?.officer_display?.split(' — ')[0] || '';
+        const nameB = row.assignment_b?.officer_display?.split(' — ')[0] || '';
+        return [
+          row.team || '',
+          row.officer_number || '',
+          row.deployment_location || '',
+          nameA,
+          row.assignment_a?.star || '',
+          row.assignment_a?.seniority || '',
+          row.assignment_a?.timestamp || '',
+          nameB,
+          row.assignment_b?.star || '',
+          row.assignment_b?.seniority || '',
+          row.assignment_b?.timestamp || ''
+        ];
+      });
 
-    autoTable(doc, {
-      head: [headers],
-      body: rows,
-      startY: 42,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [15, 23, 42] }
-    });
+      // Generate table using autoTable
+      autoTable(doc, {
+        head: [headers],
+        body: rows,
+        startY: 42,
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 2,
+          overflow: 'linebreak'
+        },
+        headStyles: { 
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { cellWidth: 15 },  // Team
+          1: { cellWidth: 15 },  // Off#
+          2: { cellWidth: 30 },  // Location
+          3: { cellWidth: 35 },  // Officer A
+          4: { cellWidth: 15 },  // Star A
+          5: { cellWidth: 22 },  // Sen A
+          6: { cellWidth: 18 },  // Time A
+          7: { cellWidth: 35 },  // Officer B
+          8: { cellWidth: 15 },  // Star B
+          9: { cellWidth: 22 },  // Sen B
+          10: { cellWidth: 18 }  // Time B
+        }
+      });
 
-    doc.save(`OT_Roster_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
+      // Save the PDF
+      const filename = `OT_Roster_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      alert('Error exporting PDF. Please try the Print option instead.');
+    }
   };
 
   const tabs = [
@@ -161,13 +222,13 @@ const Dashboard = () => {
       </div>
 
       {/* Sheet Content */}
-      <main className="max-w-[1400px] mx-auto p-4 md:p-8">
+      <main className="max-w-[1400px] mx-auto p-4 md:p-8" ref={printRef}>
         <RosterSheet sheetType={activeTab} />
       </main>
 
       {/* Print Footer */}
       <footer className="hidden print:block text-center text-xs text-slate-400 mt-8">
-        Generated: {new Date().toLocaleString()} — Unit 214 Overtime Roster
+        Generated: {new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST — Unit 214 Overtime Roster
       </footer>
     </div>
   );
