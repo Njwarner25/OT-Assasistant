@@ -89,8 +89,16 @@ const Login = () => {
           </form>
 
           <p className="text-center text-xs text-slate-400 mt-6">
-            Contact your supervisor for access credentials
+            Admin login required to manage officer roster
           </p>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full mt-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            data-testid="back-to-dashboard"
+          >
+            ← Back to Dashboard
+          </button>
         </div>
       </div>
     </div>
