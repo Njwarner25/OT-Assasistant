@@ -178,18 +178,11 @@ const Dashboard = () => {
             </button>
             <button
               onClick={handleExportPDF}
-              disabled={exportStatus === 'loading'}
-              className={`flex items-center gap-2 px-4 py-2 rounded-sm transition-colors text-sm ${
-                exportStatus === 'success' ? 'bg-green-100 text-green-700' :
-                exportStatus === 'error' ? 'bg-red-100 text-red-700' :
-                'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-sm hover:bg-slate-200 transition-colors text-sm"
               data-testid="export-pdf-button"
             >
-              {exportStatus === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> :
-               exportStatus === 'success' ? <CheckCircle className="w-4 h-4" /> :
-               <Download className="w-4 h-4" />}
-              {exportStatus === 'success' ? 'Downloaded!' : exportStatus === 'error' ? 'Export Failed' : 'Export PDF'}
+              <Download className="w-4 h-4" />
+              Export PDF
             </button>
             <button
               onClick={() => setShowResetConfirm(true)}
