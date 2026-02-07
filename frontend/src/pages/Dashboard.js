@@ -31,7 +31,7 @@ const Dashboard = () => {
     window.print();
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = () => {
     const sheet = sheets[activeDay]?.[activeType];
     if (!sheet) {
       alert('No sheet data to export');
@@ -39,9 +39,6 @@ const Dashboard = () => {
     }
 
     try {
-      const { default: jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
-      
       const doc = new jsPDF('landscape');
       
       const dayLabels = {
@@ -56,17 +53,14 @@ const Dashboard = () => {
         nights_ext: '4HR EXT TOUR (1600-2000 NIGHTS EXT)'
       };
 
-      // Title
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text(`${dayLabels[activeDay]} - OVERTIME WORKING - ${typeLabels[activeType]}`, 14, 20);
       
-      // Sergeant info
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
       
-      // Timestamp
       const timestamp = new Date().toLocaleString('en-US', { 
         timeZone: 'America/Chicago', 
         hour12: false,
@@ -78,10 +72,8 @@ const Dashboard = () => {
       });
       doc.text(`Generated: ${timestamp} CST`, 14, 36);
 
-      // Table headers - simplified structure
       const headers = ['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time'];
       
-      // Table rows
       const rows = sheet.rows.map(row => {
         const name = row.assignment_a?.officer_display?.split(' — ')[0] || '';
         return [
@@ -103,13 +95,13 @@ const Dashboard = () => {
         headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 20 },  // Team
-          1: { cellWidth: 25 },  // Officer #
-          2: { cellWidth: 40 },  // Location
-          3: { cellWidth: 60 },  // Officer
-          4: { cellWidth: 20 },  // Star
-          5: { cellWidth: 30 },  // Seniority
-          6: { cellWidth: 25 }   // Time
+          0: { cellWidth: 20 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 60 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 30 },
+          6: { cellWidth: 25 }
         }
       });
 
