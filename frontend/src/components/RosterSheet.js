@@ -110,11 +110,11 @@ const RosterSheet = ({ day, sheetType }) => {
   }
 
   return (
-    <div className="bg-white rounded-sm border border-slate-300 shadow-sm print:shadow-none print:border-black" data-testid={`roster-sheet-${sheetType}`}>
+    <div className="bg-white rounded-sm border border-slate-300 shadow-sm print:shadow-none print:border-black" data-testid={`roster-sheet-${day}-${sheetType}`}>
       {/* Sheet Header */}
       <div className="p-4 border-b-2 border-slate-900 print:border-black">
         <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase border-b-2 border-slate-900 pb-1 mb-4 font-['Chivo']">
-          {config.title}
+          {DAY_LABELS[day]} — OVERTIME WORKING — {config.title}
         </h2>
         
         {/* Sergeant Info */}
