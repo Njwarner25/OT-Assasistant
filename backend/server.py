@@ -266,6 +266,72 @@ async def get_version_logs():
     logs.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
     return logs
 
+# ==================== BUMPED OFFICERS ====================
+
+@api_router.get("/bumped-officers")
+async def get_bumped_officers():
+    bumped = await db.bumped_officers.find({}, {"_id": 0}).to_list(100)
+    bumped.sort(key=lambda x: x.get('bumped_at', ''), reverse=True)
+    return bumped
+
+@api_router.post("/bumped-officers")
+async def add_bumped_officer(bumped: BumpedOfficer):
+    doc = bumped.model_dump()
+    await db.bumped_officers.insert_one(doc)
+    return bumped
+
+@api_router.put("/bumped-officers/{bumped_id}/notified")
+async def mark_bumped_notified(bumped_id: str):
+    result = await db.bumped_officers.update_one(
+        {"id": bumped_id},
+        {"$set": {"notified": True}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Bumped officer record not found")
+    return {"message": "Marked as notified"}
+
+@api_router.delete("/bumped-officers/{bumped_id}")
+async def delete_bumped_record(bumped_id: str):
+    result = await db.bumped_officers.delete_one({"id": bumped_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Bumped officer record not found")
+    return {"message": "Record deleted"}
+
+@api_router.delete("/bumped-officers")
+async def clear_all_bumped():
+    await db.bumped_officers.delete_many({})
+    return {"message": "All bumped officer records cleared"}
+
+# ==================== LOCK SHEET ====================
+
+@api_router.post("/sheets/{day}/{sheet_type}/lock")
+async def lock_sheet(day: str, sheet_type: str):
+    sheet_id = f"{day}_{sheet_type}"
+    result = await db.sheets.update_one(
+        {"sheet_id": sheet_id},
+        {"$set": {
+            "locked": True,
+            "locked_at": datetime.now(timezone.utc).isoformat(),
+            "locked_by": "Admin"
+        }}
+    )
+    await log_version_change("Lock", f"Locked {day} {sheet_type} sheet")
+    return {"message": f"Sheet {day}/{sheet_type} locked"}
+
+@api_router.post("/sheets/{day}/{sheet_type}/unlock")
+async def unlock_sheet(day: str, sheet_type: str):
+    sheet_id = f"{day}_{sheet_type}"
+    result = await db.sheets.update_one(
+        {"sheet_id": sheet_id},
+        {"$set": {
+            "locked": False,
+            "locked_at": None,
+            "locked_by": None
+        }}
+    )
+    await log_version_change("Unlock", f"Unlocked {day} {sheet_type} sheet")
+    return {"message": f"Sheet {day}/{sheet_type} unlocked"}
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")
