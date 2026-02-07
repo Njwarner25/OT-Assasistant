@@ -84,6 +84,7 @@ const RosterSheet = ({ day, sheetType }) => {
   const [autoLockDate, setAutoLockDate] = useState('');
   const [autoLockTime, setAutoLockTime] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
   const config = SHEET_CONFIG[sheetType];
 
   useEffect(() => {
