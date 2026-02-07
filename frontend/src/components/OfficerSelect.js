@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search, X, Keyboard } from 'lucide-react';
 
-const OfficerSelect = ({ officers, selectedOfficerId, onSelect, testId }) => {
+const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSelect, testId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [manualMode, setManualMode] = useState(false);
@@ -9,7 +9,10 @@ const OfficerSelect = ({ officers, selectedOfficerId, onSelect, testId }) => {
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
-  const selectedOfficer = officers.find(o => o.id === selectedOfficerId);
+  // For regular officers, find in list. For manual entries, use assignment data
+  const selectedOfficer = selectedAssignment?.isManual 
+    ? { id: selectedOfficerId, last_name: selectedAssignment.officer_display, isManual: true }
+    : officers.find(o => o.id === selectedOfficerId);
 
   const filteredOfficers = officers.filter(officer => {
     const searchLower = search.toLowerCase();
