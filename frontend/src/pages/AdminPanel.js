@@ -24,9 +24,9 @@ const AdminPanel = () => {
 
   const shareUrl = window.location.origin;
 
-  const DAYS = ['friday', 'saturday', 'sunday'];
   const SHEET_TYPES = ['rdo', 'days_ext', 'nights_ext'];
   const TYPE_LABELS = { rdo: 'RDO 2000-0500', days_ext: 'Days EXT 2000-2100', nights_ext: 'Nights EXT 1600-2000' };
+  const DAY_LABELS = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
 
   const isSheetLocked = (sheet) => {
     if (!sheet) return false;
@@ -35,39 +35,35 @@ const AdminPanel = () => {
     return false;
   };
 
-  const allSheetsLocked = DAYS.every(day =>
-    SHEET_TYPES.every(type => isSheetLocked(sheets[day]?.[type]))
-  );
+  const isDayLocked = (day) =>
+    SHEET_TYPES.every(type => isSheetLocked(sheets[day]?.[type]));
 
-  const buildRosterSummary = () => {
-    let summary = 'UNIT 214 — OVERTIME ROSTER (COMPLETE)\n';
+  const buildDaySummary = (day) => {
+    let summary = `UNIT 214 — ${DAY_LABELS[day]} OVERTIME ROSTER\n`;
     summary += '='.repeat(50) + '\n\n';
-    for (const day of DAYS) {
-      summary += `${day.toUpperCase()}\n`;
+    for (const type of SHEET_TYPES) {
+      const sheet = sheets[day]?.[type];
+      if (!sheet) continue;
+      summary += `${TYPE_LABELS[type]}\n`;
       summary += '-'.repeat(50) + '\n';
-      for (const type of SHEET_TYPES) {
-        const sheet = sheets[day]?.[type];
-        if (!sheet) continue;
-        summary += `\n  ${TYPE_LABELS[type]}\n`;
-        summary += '  Team | Officer                    | Star#  | Seniority   | Time\n';
-        for (const row of sheet.rows) {
-          const a = row.assignment_a;
-          const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
-          if (name) {
-            summary += `  ${(row.team || '').padEnd(4)} | ${name.padEnd(26)} | ${(a?.star || '').padEnd(6)} | ${(a?.seniority || '').padEnd(11)} | ${a?.timestamp || ''}\n`;
-          }
+      summary += 'Team | Officer                    | Star#  | Seniority   | Time\n';
+      for (const row of sheet.rows) {
+        const a = row.assignment_a;
+        const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
+        if (name) {
+          summary += `${(row.team || '').padEnd(4)} | ${name.padEnd(26)} | ${(a?.star || '').padEnd(6)} | ${(a?.seniority || '').padEnd(11)} | ${a?.timestamp || ''}\n`;
         }
       }
       summary += '\n';
     }
-    summary += `\nView the full roster online: ${shareUrl}\n`;
+    summary += `View the full roster online: ${shareUrl}\n`;
     return summary;
   };
 
-  const handleShareRosterEmail = () => {
-    const subject = encodeURIComponent('Unit 214 — Complete Overtime Roster');
-    const body = encodeURIComponent(buildRosterSummary());
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  const handleShareDayEmail = (day) => {
+    const subject = encodeURIComponent(`Unit 214 — ${DAY_LABELS[day]} Overtime Roster`);
+    const body = encodeURIComponent(buildDaySummary(day));
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
   };
 
   useEffect(() => {
