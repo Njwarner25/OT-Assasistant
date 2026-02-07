@@ -242,6 +242,45 @@ const Dashboard = () => {
       <footer className="hidden print:block text-center text-xs text-slate-400 mt-8">
         Generated: {new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST — Unit 214 Overtime Roster
       </footer>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
+          <div className="bg-white rounded-sm shadow-xl p-6 w-96 max-w-[90vw]">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+              <h3 className="text-lg font-bold text-slate-800 uppercase">Reset All Sheets</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-6">
+              This will clear ALL officer assignments for every day and sheet type. This action cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleReset}
+                disabled={resetStatus === 'loading'}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-sm text-sm font-semibold transition-colors ${
+                  resetStatus === 'success' ? 'bg-green-600 text-white' :
+                  resetStatus === 'loading' ? 'bg-red-400 text-white cursor-wait' :
+                  'bg-red-600 text-white hover:bg-red-700'
+                }`}
+                data-testid="confirm-reset-button"
+              >
+                {resetStatus === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                 resetStatus === 'success' ? <CheckCircle className="w-4 h-4" /> :
+                 <RotateCcw className="w-4 h-4" />}
+                {resetStatus === 'success' ? 'Reset Complete!' : resetStatus === 'loading' ? 'Resetting...' : 'Yes, Reset All'}
+              </button>
+              <button
+                onClick={() => { setShowResetConfirm(false); setResetStatus(null); }}
+                className="px-6 py-2.5 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-sm font-semibold"
+                data-testid="cancel-reset-button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
