@@ -136,7 +136,7 @@ const RosterSheet = ({ sheetType }) => {
             />
           </div>
           <div className="text-xs text-slate-400 self-center print:hidden">
-            Generated: {new Date().toLocaleString()}
+            Generated: {new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST
           </div>
         </div>
       </div>
