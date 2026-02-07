@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
-import { Shield, LogOut, Users, FileSpreadsheet, RotateCcw, Printer, Download } from 'lucide-react';
+import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
