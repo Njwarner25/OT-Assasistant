@@ -202,7 +202,7 @@ const Dashboard = () => {
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
-                    {['Team','Officer #','Location','Officer','Star','Seniority','Time'].map(h => (
+                    {['Team','BT#','Location','Officer','Star','Seniority','Date/Time'].map(h => (
                       <th key={h} className="bg-slate-900 text-white text-left text-xs font-bold p-2 border border-black">{h}</th>
                     ))}
                   </tr>
