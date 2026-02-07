@@ -51,13 +51,30 @@ const RosterSheet = ({ sheetType }) => {
   const handleOfficerSelect = (rowIndex, assignmentKey, officer) => {
     if (!localSheet) return;
     const updatedRows = [...localSheet.rows];
-    const assignment = officer ? {
-      officer_id: officer.id,
-      officer_display: `${officer.last_name}, ${officer.first_name} — ${officer.star} — ${officer.seniority_date}`,
-      star: officer.star,
-      seniority: officer.seniority_date,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour12: false })
-    } : null;
+    let assignment = null;
+    
+    if (officer) {
+      if (officer.isManual) {
+        // Manual entry - just use the name they typed
+        assignment = {
+          officer_id: officer.id,
+          officer_display: officer.last_name,
+          star: '',
+          seniority: '',
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          isManual: true
+        };
+      } else {
+        // Regular officer from roster
+        assignment = {
+          officer_id: officer.id,
+          officer_display: `${officer.last_name}, ${officer.first_name} — ${officer.star} — ${officer.seniority_date}`,
+          star: officer.star,
+          seniority: officer.seniority_date,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false })
+        };
+      }
+    }
     
     updatedRows[rowIndex] = { 
       ...updatedRows[rowIndex], 
