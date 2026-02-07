@@ -53,6 +53,23 @@ class Assignment(BaseModel):
     star: Optional[str] = None
     seniority: Optional[str] = None
     timestamp: Optional[str] = None
+    isManual: Optional[bool] = False
+
+class BumpedOfficer(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    officer_id: str
+    officer_name: str
+    officer_star: str
+    officer_seniority: str
+    bumped_by_name: str
+    bumped_by_star: str
+    bumped_by_seniority: str
+    day: str
+    sheet_type: str
+    assignment_slot: str
+    bumped_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    notified: bool = False
 
 class SheetRow(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
