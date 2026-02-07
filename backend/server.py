@@ -77,11 +77,6 @@ class SheetRow(BaseModel):
     officer_number: Optional[str] = None
     deployment_location: Optional[str] = None
     assignment_a: Optional[Assignment] = None
-    assignment_b: Optional[Assignment] = None
-    assignment_c: Optional[Assignment] = None
-    assignment_d: Optional[Assignment] = None
-    assignment_e: Optional[Assignment] = None
-    assignment_f: Optional[Assignment] = None
 
 class OTSheet(BaseModel):
     model_config = ConfigDict(extra="ignore")
