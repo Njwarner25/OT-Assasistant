@@ -100,20 +100,12 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/admin')}
+              onClick={handleAdminClick}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-sm hover:bg-slate-700 transition-colors text-sm"
               data-testid="admin-button"
             >
               <Users className="w-4 h-4" />
               Admin
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-sm hover:bg-slate-700 transition-colors text-sm"
-              data-testid="logout-button"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
             </button>
           </div>
         </div>
