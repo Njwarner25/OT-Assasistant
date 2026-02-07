@@ -73,9 +73,14 @@ const Dashboard = () => {
   };
 
   const handleExportPDF = () => {
-    // Direct download from backend - always works
     const url = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
-    window.open(url, '_blank');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `OT_Roster_${activeDay}_${activeType}.pdf`;
+    link.target = '_self';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const days = [
