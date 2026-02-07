@@ -71,7 +71,8 @@ const RosterSheet = ({ sheetType }) => {
           officer_display: `${officer.last_name}, ${officer.first_name} — ${officer.star} — ${officer.seniority_date}`,
           star: officer.star,
           seniority: officer.seniority_date,
-          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false })
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          isManual: false
         };
       }
     }
