@@ -152,9 +152,10 @@ async def delete_officer(officer_id: str):
 
 # ==================== OT SHEETS ====================
 
-@api_router.get("/sheets/{sheet_type}", response_model=OTSheet)
-async def get_sheet(sheet_type: str):
-    sheet = await db.sheets.find_one({"sheet_type": sheet_type}, {"_id": 0})
+@api_router.get("/sheets/{day}/{sheet_type}", response_model=OTSheet)
+async def get_sheet(day: str, sheet_type: str):
+    sheet_id = f"{day}_{sheet_type}"
+    sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
     if not sheet:
         # Create default sheet structure
         rows = []
@@ -169,20 +170,34 @@ async def get_sheet(sheet_type: str):
             rows.append(SheetRow(team=team).model_dump())
         
         sheet = OTSheet(sheet_type=sheet_type, rows=rows).model_dump()
+        sheet['sheet_id'] = sheet_id
+        sheet['day'] = day
         await db.sheets.insert_one(sheet)
     return sheet
 
-@api_router.put("/sheets/{sheet_type}", response_model=OTSheet)
-async def update_sheet(sheet_type: str, sheet: OTSheet):
+@api_router.put("/sheets/{day}/{sheet_type}", response_model=OTSheet)
+async def update_sheet(day: str, sheet_type: str, sheet: OTSheet):
+    sheet_id = f"{day}_{sheet_type}"
     sheet_dict = sheet.model_dump()
     sheet_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
+    sheet_dict['sheet_id'] = sheet_id
+    sheet_dict['day'] = day
     
     await db.sheets.update_one(
-        {"sheet_type": sheet_type},
+        {"sheet_id": sheet_id},
         {"$set": sheet_dict},
         upsert=True
     )
     return sheet
+
+# Keep old endpoints for backward compatibility
+@api_router.get("/sheets/{sheet_type}")
+async def get_sheet_legacy(sheet_type: str):
+    return await get_sheet("friday", sheet_type)
+
+@api_router.put("/sheets/{sheet_type}")
+async def update_sheet_legacy(sheet_type: str, sheet: OTSheet):
+    return await update_sheet("friday", sheet_type, sheet)
 
 @api_router.post("/sheets/reset")
 async def reset_all_sheets():
