@@ -175,7 +175,7 @@ async def get_sheet(day: str, sheet_type: str):
     sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
     if not sheet:
         # Create default sheet structure - all sheets have same team structure
-        teams = ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE']
+        teams = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E']
         rows = []
         for team in teams:
             rows.append(SheetRow(team=team).model_dump())

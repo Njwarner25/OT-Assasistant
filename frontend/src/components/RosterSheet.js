@@ -6,17 +6,17 @@ import { AlertTriangle, Lock, LockOpen, Clock, XCircle } from 'lucide-react';
 const SHEET_CONFIG = {
   rdo: {
     title: 'RDO 2000–0500',
-    teams: ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE'],
+    teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   },
   days_ext: {
     title: '4HR EXT TOUR (2000–2100 DAYS EXT)',
-    teams: ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE'],
+    teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   },
   nights_ext: {
     title: '4HR EXT TOUR (1600–2000 NIGHTS EXT)',
-    teams: ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE'],
+    teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   }
 };
