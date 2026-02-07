@@ -416,6 +416,75 @@ async def seed_officers():
     await log_version_change("Seed", f"Seeded {len(roster_officers)} officers from Unit 214 roster")
     return {"message": f"Seeded {len(roster_officers)} officers"}
 
+# ==================== PDF EXPORT ====================
+
+@api_router.get("/sheets/{day}/{sheet_type}/export-pdf")
+async def export_sheet_pdf(day: str, sheet_type: str):
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import inch
+
+    sheet_id = f"{day}_{sheet_type}"
+    sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
+    if not sheet:
+        raise HTTPException(status_code=404, detail="Sheet not found")
+
+    day_labels = {"friday": "FRIDAY", "saturday": "SATURDAY", "sunday": "SUNDAY"}
+    type_labels = {"rdo": "RDO 2000-0500", "days_ext": "4HR EXT TOUR (2000-2100 DAYS EXT)", "nights_ext": "4HR EXT TOUR (1600-2000 NIGHTS EXT)"}
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(letter), leftMargin=0.5*inch, rightMargin=0.5*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>{day_labels.get(day, day.upper())} — OVERTIME WORKING — {type_labels.get(sheet_type, sheet_type.upper())}</b>", styles['Title']))
+    elements.append(Paragraph(f"Sergeant: {sheet.get('sergeant_name', '___________')} &nbsp;&nbsp; Star#: {sheet.get('sergeant_star', '_____')}", styles['Normal']))
+    ts = datetime.now(timezone.utc).strftime("%m/%d/%Y %H:%M")
+    elements.append(Paragraph(f"Generated: {ts} UTC", styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    data = [['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time']]
+    for row in sheet.get('rows', []):
+        a = row.get('assignment_a') or {}
+        name = (a.get('officer_display') or '').split(' — ')[0] if a.get('officer_display') else ''
+        data.append([
+            row.get('team', ''),
+            row.get('officer_number', ''),
+            row.get('deployment_location', ''),
+            name,
+            a.get('star', ''),
+            a.get('seniority', ''),
+            a.get('timestamp', '')
+        ])
+
+    col_widths = [0.5*inch, 0.8*inch, 1.2*inch, 3*inch, 0.7*inch, 1*inch, 0.8*inch]
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+    ]))
+    elements.append(table)
+    doc.build(elements)
+
+    buf.seek(0)
+    filename = f"OT_Roster_{day}_{sheet_type}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
 # Include the router
 app.include_router(api_router)
 
