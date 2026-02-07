@@ -446,7 +446,7 @@ async def export_sheet_pdf(day: str, sheet_type: str):
     elements.append(Paragraph(f"Generated: {ts} UTC", styles['Normal']))
     elements.append(Spacer(1, 12))
 
-    data = [['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time']]
+    data = [['Team', 'BT#', 'Location', 'Officer', 'Star', 'Seniority', 'Date/Time']]
     for row in sheet.get('rows', []):
         a = row.get('assignment_a') or {}
         name = (a.get('officer_display') or '').split(' — ')[0] if a.get('officer_display') else ''
