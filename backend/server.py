@@ -234,6 +234,9 @@ async def seed_officers():
     if count > 0:
         return {"message": "Officers already seeded", "count": count}
     
+    # Clear any partial data first
+    await db.officers.delete_many({})
+    
     # Sample officer data sorted by seniority (oldest first)
     sample_officers = [
         {"last_name": "RODRIGUEZ", "first_name": "SYLVIA", "star": "10594", "seniority_date": "04/01/2013"},
