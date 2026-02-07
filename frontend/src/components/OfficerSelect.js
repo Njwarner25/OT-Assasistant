@@ -120,14 +120,17 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
         {displayValue}
       </span>
 
-      {/* Dropdown - Fixed positioning for better z-index behavior */}
+      {/* Dropdown - Fixed positioning, flips up near bottom of page */}
       {isOpen && (
         <div 
           className="fixed bg-white border border-slate-300 rounded-sm shadow-2xl max-h-72 overflow-hidden"
           style={{ 
             zIndex: 999999,
             width: '300px',
-            top: containerRef.current?.getBoundingClientRect().bottom + 4,
+            ...(containerRef.current && (window.innerHeight - containerRef.current.getBoundingClientRect().bottom < 300)
+              ? { bottom: window.innerHeight - containerRef.current.getBoundingClientRect().top + 4 }
+              : { top: containerRef.current?.getBoundingClientRect().bottom + 4 }
+            ),
             left: Math.min(
               containerRef.current?.getBoundingClientRect().left,
               window.innerWidth - 310
