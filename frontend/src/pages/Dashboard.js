@@ -45,7 +45,7 @@ const Dashboard = () => {
     
     doc.setFontSize(10);
     doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 36);
+    doc.text(`Generated: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST`, 14, 36);
 
     const headers = ['Team', 'Officer #', 'Location', 'A', 'Star', 'Sen', 'Time', 'B', 'Star', 'Sen', 'Time'];
     const rows = sheet.rows.map(row => [
@@ -62,7 +62,7 @@ const Dashboard = () => {
       row.assignment_b?.timestamp || ''
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [headers],
       body: rows,
       startY: 42,
