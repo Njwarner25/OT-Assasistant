@@ -2,10 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
-import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download } from 'lucide-react';
+import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download, Calendar } from 'lucide-react';
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('rdo');
+  const [activeDay, setActiveDay] = useState('friday');
+  const [activeType, setActiveType] = useState('rdo');
   const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
   const navigate = useNavigate();
   const printRef = useRef(null);
@@ -19,7 +20,7 @@ const Dashboard = () => {
   };
 
   const handleReset = async () => {
-    if (window.confirm('Are you sure you want to reset ALL overtime sheets? This will clear all assignments.')) {
+    if (window.confirm('Are you sure you want to reset ALL overtime sheets? This will clear all assignments for all days.')) {
       await resetAllSheets();
     }
   };
@@ -29,28 +30,34 @@ const Dashboard = () => {
   };
 
   const handleExportPDF = async () => {
-    const sheet = sheets[activeTab];
+    const sheet = sheets[activeDay]?.[activeType];
     if (!sheet) {
       alert('No sheet data to export');
       return;
     }
 
     try {
-      // Dynamic import to avoid SSR issues
       const { default: jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
       
       const doc = new jsPDF('landscape');
-      const sheetTitles = {
-        rdo: 'OVERTIME WORKING - RDO 2000-0500',
-        days_ext: 'OVERTIME WORKING - 4HR EXT TOUR (2000-2100 DAYS EXT)',
-        nights_ext: 'OVERTIME WORKING - 4HR EXT TOUR (1600-2000 NIGHTS EXT)'
+      
+      const dayLabels = {
+        friday: 'FRIDAY',
+        saturday: 'SATURDAY',
+        sunday: 'SUNDAY'
+      };
+      
+      const typeLabels = {
+        rdo: 'RDO 2000-0500',
+        days_ext: '4HR EXT TOUR (2000-2100 DAYS EXT)',
+        nights_ext: '4HR EXT TOUR (1600-2000 NIGHTS EXT)'
       };
 
       // Title
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(sheetTitles[activeTab], 14, 20);
+      doc.text(`${dayLabels[activeDay]} - OVERTIME WORKING - ${typeLabels[activeType]}`, 14, 20);
       
       // Sergeant info
       doc.setFontSize(10);
@@ -91,41 +98,29 @@ const Dashboard = () => {
         ];
       });
 
-      // Generate table using autoTable
       autoTable(doc, {
         head: [headers],
         body: rows,
         startY: 42,
-        styles: { 
-          fontSize: 8, 
-          cellPadding: 2,
-          overflow: 'linebreak'
-        },
-        headStyles: { 
-          fillColor: [15, 23, 42],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
-        },
+        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 15 },  // Team
-          1: { cellWidth: 15 },  // Off#
-          2: { cellWidth: 30 },  // Location
-          3: { cellWidth: 35 },  // Officer A
-          4: { cellWidth: 15 },  // Star A
-          5: { cellWidth: 22 },  // Sen A
-          6: { cellWidth: 18 },  // Time A
-          7: { cellWidth: 35 },  // Officer B
-          8: { cellWidth: 15 },  // Star B
-          9: { cellWidth: 22 },  // Sen B
-          10: { cellWidth: 18 }  // Time B
+          0: { cellWidth: 15 },
+          1: { cellWidth: 15 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 22 },
+          6: { cellWidth: 18 },
+          7: { cellWidth: 35 },
+          8: { cellWidth: 15 },
+          9: { cellWidth: 22 },
+          10: { cellWidth: 18 }
         }
       });
 
-      // Save the PDF
-      const filename = `OT_Roster_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const filename = `OT_Roster_${activeDay}_${activeType}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
       
     } catch (error) {
@@ -134,7 +129,13 @@ const Dashboard = () => {
     }
   };
 
-  const tabs = [
+  const days = [
+    { id: 'friday', label: 'Friday' },
+    { id: 'saturday', label: 'Saturday' },
+    { id: 'sunday', label: 'Sunday' }
+  ];
+
+  const sheetTypes = [
     { id: 'rdo', label: 'RDO 2000-0500' },
     { id: 'days_ext', label: 'Days EXT 2000-2100' },
     { id: 'nights_ext', label: 'Nights EXT 1600-2000' }
@@ -172,23 +173,47 @@ const Dashboard = () => {
         </div>
       </header>
 
+      {/* Day Selector */}
+      <div className="bg-slate-800 text-white print:hidden">
+        <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-4">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <span className="text-xs text-slate-400 uppercase tracking-wider">Select Day:</span>
+          <div className="flex gap-1">
+            {days.map(day => (
+              <button
+                key={day.id}
+                onClick={() => setActiveDay(day.id)}
+                className={`px-4 py-1.5 text-sm font-semibold uppercase tracking-wider rounded-sm transition-colors ${
+                  activeDay === day.id
+                    ? 'bg-white text-slate-900'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+                data-testid={`day-${day.id}`}
+              >
+                {day.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Toolbar */}
       <div className="bg-white border-b border-slate-200 print:hidden">
         <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex gap-2">
-            {tabs.map(tab => (
+            {sheetTypes.map(type => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                key={type.id}
+                onClick={() => setActiveType(type.id)}
                 className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-sm transition-colors ${
-                  activeTab === tab.id
+                  activeType === type.id
                     ? 'bg-slate-900 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
-                data-testid={`tab-${tab.id}`}
+                data-testid={`tab-${type.id}`}
               >
                 <FileSpreadsheet className="w-4 h-4 inline mr-2" />
-                {tab.label}
+                {type.label}
               </button>
             ))}
           </div>
@@ -223,7 +248,7 @@ const Dashboard = () => {
 
       {/* Sheet Content */}
       <main className="max-w-[1400px] mx-auto p-4 md:p-8" ref={printRef}>
-        <RosterSheet sheetType={activeTab} />
+        <RosterSheet day={activeDay} sheetType={activeType} />
       </main>
 
       {/* Print Footer */}
