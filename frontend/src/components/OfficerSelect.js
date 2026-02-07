@@ -94,8 +94,11 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-2 py-1 bg-white border border-slate-200 rounded-sm text-xs text-left hover:border-slate-400 transition-colors print:border-black print:hidden"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`w-full flex items-center justify-between px-2 py-1 bg-white border border-slate-200 rounded-sm text-xs text-left transition-colors print:border-black print:hidden ${
+          disabled ? 'bg-slate-100 cursor-not-allowed opacity-70' : 'hover:border-slate-400'
+        }`}
         data-testid={`${testId}-trigger`}
       >
         <span className={selectedOfficer ? 'text-slate-900 truncate' : 'text-slate-400'}>
