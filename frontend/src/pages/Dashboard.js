@@ -73,7 +73,27 @@ const Dashboard = () => {
     }
   };
 
-  // handleExportPDF removed - using direct <a> link instead
+  // handleExportPDF - fetch blob and trigger same-origin download
+  const handleExportPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `OT_Roster_${activeDay}_${activeType}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    }
+    setPdfLoading(false);
+  };
 
   const days = [
     { id: 'friday', label: 'Friday' },
