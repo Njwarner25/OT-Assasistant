@@ -334,6 +334,26 @@ async def unlock_sheet(day: str, sheet_type: str):
     await log_version_change("Unlock", f"Unlocked {day} {sheet_type} sheet")
     return {"message": f"Sheet {day}/{sheet_type} unlocked"}
 
+class AutoLockRequest(BaseModel):
+    auto_lock_time: Optional[str] = None  # ISO format or None to disable
+    auto_lock_enabled: bool = False
+
+@api_router.post("/sheets/{day}/{sheet_type}/set-auto-lock")
+async def set_auto_lock(day: str, sheet_type: str, request: AutoLockRequest):
+    sheet_id = f"{day}_{sheet_type}"
+    result = await db.sheets.update_one(
+        {"sheet_id": sheet_id},
+        {"$set": {
+            "auto_lock_time": request.auto_lock_time,
+            "auto_lock_enabled": request.auto_lock_enabled
+        }}
+    )
+    if request.auto_lock_enabled and request.auto_lock_time:
+        await log_version_change("Auto-Lock Set", f"Set auto-lock for {day} {sheet_type} at {request.auto_lock_time}")
+    else:
+        await log_version_change("Auto-Lock Disabled", f"Disabled auto-lock for {day} {sheet_type}")
+    return {"message": f"Auto-lock settings updated for {day}/{sheet_type}"}
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")
