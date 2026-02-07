@@ -131,6 +131,69 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchBumpedOfficers = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/bumped-officers`);
+      setBumpedOfficers(response.data);
+    } catch (error) {
+      console.error('Error fetching bumped officers:', error);
+    }
+  }, []);
+
+  const addBumpedOfficer = useCallback(async (bumpedData) => {
+    try {
+      await axios.post(`${API}/bumped-officers`, bumpedData);
+      await fetchBumpedOfficers();
+    } catch (error) {
+      console.error('Error adding bumped officer:', error);
+    }
+  }, [fetchBumpedOfficers]);
+
+  const markBumpedNotified = useCallback(async (bumpedId) => {
+    try {
+      await axios.put(`${API}/bumped-officers/${bumpedId}/notified`);
+      await fetchBumpedOfficers();
+    } catch (error) {
+      console.error('Error marking bumped officer notified:', error);
+    }
+  }, [fetchBumpedOfficers]);
+
+  const deleteBumpedRecord = useCallback(async (bumpedId) => {
+    try {
+      await axios.delete(`${API}/bumped-officers/${bumpedId}`);
+      await fetchBumpedOfficers();
+    } catch (error) {
+      console.error('Error deleting bumped record:', error);
+    }
+  }, [fetchBumpedOfficers]);
+
+  const clearAllBumped = useCallback(async () => {
+    try {
+      await axios.delete(`${API}/bumped-officers`);
+      await fetchBumpedOfficers();
+    } catch (error) {
+      console.error('Error clearing bumped officers:', error);
+    }
+  }, [fetchBumpedOfficers]);
+
+  const lockSheet = useCallback(async (day, sheetType) => {
+    try {
+      await axios.post(`${API}/sheets/${day}/${sheetType}/lock`);
+      await fetchSheet(day, sheetType);
+    } catch (error) {
+      console.error('Error locking sheet:', error);
+    }
+  }, [fetchSheet]);
+
+  const unlockSheet = useCallback(async (day, sheetType) => {
+    try {
+      await axios.post(`${API}/sheets/${day}/${sheetType}/unlock`);
+      await fetchSheet(day, sheetType);
+    } catch (error) {
+      console.error('Error unlocking sheet:', error);
+    }
+  }, [fetchSheet]);
+
   const seedOfficers = useCallback(async () => {
     try {
       await axios.post(`${API}/seed`);
