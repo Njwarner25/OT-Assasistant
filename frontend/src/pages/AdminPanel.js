@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check } from 'lucide-react';
+import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
-  const { officers, addOfficer, updateOfficer, deleteOfficer, versionLogs, fetchVersionLogs } = useApp();
+  const { 
+    officers, addOfficer, updateOfficer, deleteOfficer, 
+    versionLogs, fetchVersionLogs,
+    bumpedOfficers, fetchBumpedOfficers, markBumpedNotified, deleteBumpedRecord, clearAllBumped
+  } = useApp();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showLogs, setShowLogs] = useState(false);
@@ -21,7 +25,8 @@ const AdminPanel = () => {
 
   useEffect(() => {
     fetchVersionLogs();
-  }, [fetchVersionLogs]);
+    fetchBumpedOfficers();
+  }, [fetchVersionLogs, fetchBumpedOfficers]);
 
   const handleCopyLink = async () => {
     try {
@@ -29,7 +34,6 @@ const AdminPanel = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -44,6 +48,23 @@ const AdminPanel = () => {
   const handleShareEmail = () => {
     const subject = encodeURIComponent('Unit 214 Overtime Roster - Sign Up Link');
     const body = encodeURIComponent(`You are invited to sign up for overtime.\n\nClick the link below to access the OT Roster:\n${shareUrl}\n\nPlease select your name from the dropdown or type your name manually.\n\nThank you.`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleEmailBumped = (bumped) => {
+    const subject = encodeURIComponent(`Unit 214 OT Roster - Overtime Slot Update`);
+    const body = encodeURIComponent(
+      `Dear ${bumped.officer_name},\n\n` +
+      `This is to inform you that you have been removed from the overtime roster for ${bumped.day.toUpperCase()} - ${bumped.sheet_type.replace('_', ' ').toUpperCase()} due to seniority.\n\n` +
+      `Details:\n` +
+      `- Your Seniority Date: ${bumped.officer_seniority}\n` +
+      `- Bumped by: ${bumped.bumped_by_name} (Star: ${bumped.bumped_by_star})\n` +
+      `- Their Seniority Date: ${bumped.bumped_by_seniority}\n` +
+      `- Slot: ${bumped.assignment_slot}\n` +
+      `- Time of change: ${new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago' })} CST\n\n` +
+      `We apologize for any inconvenience. Please check the roster for available slots.\n\n` +
+      `Thank you.`
+    );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
@@ -92,6 +113,8 @@ const AdminPanel = () => {
     setFormData({ last_name: '', first_name: '', star: '', seniority_date: '' });
   };
 
+  const unnotifiedCount = bumpedOfficers.filter(b => !b.notified).length;
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-panel">
       {/* Header */}
@@ -102,6 +125,12 @@ const AdminPanel = () => {
             <h1 className="text-xl font-black tracking-tight uppercase font-['Chivo']">
               ADMIN PANEL
             </h1>
+            {unnotifiedCount > 0 && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                <Bell className="w-3 h-3" />
+                {unnotifiedCount} Pending
+              </span>
+            )}
           </div>
           <button
             onClick={() => navigate('/dashboard')}
@@ -115,6 +144,97 @@ const AdminPanel = () => {
       </header>
 
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
+        {/* Bumped Officers Alert */}
+        {bumpedOfficers.length > 0 && (
+          <div className="mb-8 bg-red-50 border-2 border-red-300 rounded-sm p-4" data-testid="bumped-officers-section">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-red-800 uppercase flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Bumped Officers - Action Required
+              </h2>
+              <button
+                onClick={() => {
+                  if (window.confirm('Clear all bumped officer records?')) {
+                    clearAllBumped();
+                  }
+                }}
+                className="text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Clear All
+              </button>
+            </div>
+            <p className="text-sm text-red-700 mb-4">
+              The following officers were removed from the roster due to seniority. Please notify them via email.
+            </p>
+            <div className="space-y-3">
+              {bumpedOfficers.map((bumped) => (
+                <div 
+                  key={bumped.id} 
+                  className={`p-3 rounded border ${bumped.notified ? 'bg-white border-slate-200' : 'bg-red-100 border-red-300'}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-bold text-red-900 text-sm">
+                        {bumped.officer_name} (Star: {bumped.officer_star})
+                      </div>
+                      <div className="text-xs text-red-700 mt-1">
+                        Seniority: {bumped.officer_seniority}
+                      </div>
+                      <div className="text-xs text-slate-600 mt-2">
+                        <strong>Bumped by:</strong> {bumped.bumped_by_name} (Star: {bumped.bumped_by_star}, Seniority: {bumped.bumped_by_seniority})
+                      </div>
+                      <div className="text-xs text-slate-600">
+                        <strong>Sheet:</strong> {bumped.day.toUpperCase()} - {bumped.sheet_type.replace('_', ' ').toUpperCase()}
+                      </div>
+                      <div className="text-xs text-slate-600">
+                        <strong>Slot:</strong> {bumped.assignment_slot}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        <strong>Time:</strong> {new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {bumped.notified ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                          <CheckCircle className="w-4 h-4" />
+                          Notified
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleEmailBumped(bumped)}
+                            className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                            data-testid={`email-bumped-${bumped.id}`}
+                          >
+                            <Mail className="w-3 h-3" />
+                            Email
+                          </button>
+                          <button
+                            onClick={() => markBumpedNotified(bumped.id)}
+                            className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                            data-testid={`mark-notified-${bumped.id}`}
+                          >
+                            <Check className="w-3 h-3" />
+                            Mark Notified
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => deleteBumpedRecord(bumped.id)}
+                        className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300 transition-colors"
+                        data-testid={`delete-bumped-${bumped.id}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Officers List */}
           <div className="lg:col-span-2">
@@ -253,8 +373,9 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {/* Version Log */}
-          <div className="lg:col-span-1">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Version Log */}
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
@@ -289,7 +410,7 @@ const AdminPanel = () => {
             </div>
 
             {/* Info Box */}
-            <div className="bg-slate-100 rounded-sm border border-slate-200 p-4 mt-4">
+            <div className="bg-slate-100 rounded-sm border border-slate-200 p-4">
               <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Admin Info</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Use this panel to manage the officer roster. Changes are automatically saved and logged.
@@ -298,7 +419,7 @@ const AdminPanel = () => {
             </div>
 
             {/* Share Section */}
-            <div className="bg-white rounded-sm border border-slate-200 shadow-sm mt-4">
+            <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
                   <Mail className="w-5 h-5" />
