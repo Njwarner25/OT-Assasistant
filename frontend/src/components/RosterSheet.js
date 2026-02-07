@@ -423,6 +423,17 @@ const RosterSheet = ({ day, sheetType }) => {
           </div>
         )}
         
+        {/* Duplicate Warning */}
+        {duplicateWarning && (
+          <div className="mb-4 p-3 bg-red-100 border-2 border-red-400 rounded text-red-800 flex items-center gap-3" data-testid="duplicate-warning">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm font-semibold">{duplicateWarning}</span>
+            <button onClick={() => setDuplicateWarning(null)} className="ml-auto text-red-500 hover:text-red-700">
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Sergeant Info */}
         <div className="flex flex-wrap gap-6">
           <div className="flex items-center gap-2">
