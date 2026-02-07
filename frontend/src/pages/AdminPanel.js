@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
+import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle, Lock, Send } from 'lucide-react';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { 
     officers, addOfficer, updateOfficer, deleteOfficer, 
     versionLogs, fetchVersionLogs,
-    bumpedOfficers, fetchBumpedOfficers, markBumpedNotified, deleteBumpedRecord, clearAllBumped
+    bumpedOfficers, fetchBumpedOfficers, markBumpedNotified, deleteBumpedRecord, clearAllBumped,
+    sheets
   } = useApp();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
