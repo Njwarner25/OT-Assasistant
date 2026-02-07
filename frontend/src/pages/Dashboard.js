@@ -147,14 +147,16 @@ const Dashboard = () => {
               <Download className="w-4 h-4" />
               Export PDF
             </button>
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-sm hover:bg-red-100 transition-colors text-sm"
-              data-testid="reset-button"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset All
-            </button>
+            {isAuthenticated && (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-sm hover:bg-red-100 transition-colors text-sm"
+                data-testid="reset-button"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset All
+              </button>
+            )}
           </div>
         </div>
       </div>
