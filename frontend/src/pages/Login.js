@@ -20,7 +20,7 @@ const Login = () => {
     setLoading(false);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/admin');  // Go to Admin panel after login
     } else {
       setError(result.message || 'Invalid credentials');
     }
