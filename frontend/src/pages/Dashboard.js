@@ -72,16 +72,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    const url = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `OT_Roster_${activeDay}_${activeType}.pdf`;
-    link.target = '_self';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // handleExportPDF removed - using direct <a> link instead
 
   const days = [
     { id: 'friday', label: 'Friday' },
