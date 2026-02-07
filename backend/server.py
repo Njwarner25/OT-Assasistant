@@ -179,15 +179,9 @@ async def get_sheet(day: str, sheet_type: str):
     sheet_id = f"{day}_{sheet_type}"
     sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
     if not sheet:
-        # Create default sheet structure
+        # Create default sheet structure - all sheets have same team structure
+        teams = ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE']
         rows = []
-        if sheet_type == "rdo":
-            teams = ["A", "A", "B", "B", "C", "C"]
-        elif sheet_type == "days_ext":
-            teams = ["A", "A", "B", "B"]
-        else:  # nights_ext
-            teams = ["A", "A", "B", "B", "C", "C"]
-        
         for team in teams:
             rows.append(SheetRow(team=team).model_dump())
         
