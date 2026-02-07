@@ -201,25 +201,31 @@ async def update_sheet_legacy(sheet_type: str, sheet: OTSheet):
 
 @api_router.post("/sheets/reset")
 async def reset_all_sheets():
+    days = ["friday", "saturday", "sunday"]
     sheet_types = ["rdo", "days_ext", "nights_ext"]
-    for sheet_type in sheet_types:
-        rows = []
-        if sheet_type == "rdo":
-            teams = ["A", "A", "B", "B", "C", "C"]
-        elif sheet_type == "days_ext":
-            teams = ["A", "A", "B", "B"]
-        else:
-            teams = ["A", "A", "B", "B", "C", "C"]
-        
-        for team in teams:
-            rows.append(SheetRow(team=team).model_dump())
-        
-        sheet = OTSheet(sheet_type=sheet_type, rows=rows).model_dump()
-        await db.sheets.update_one(
-            {"sheet_type": sheet_type},
-            {"$set": sheet},
-            upsert=True
-        )
+    
+    for day in days:
+        for sheet_type in sheet_types:
+            sheet_id = f"{day}_{sheet_type}"
+            rows = []
+            if sheet_type == "rdo":
+                teams = ["A", "A", "B", "B", "C", "C"]
+            elif sheet_type == "days_ext":
+                teams = ["A", "A", "B", "B"]
+            else:
+                teams = ["A", "A", "B", "B", "C", "C"]
+            
+            for team in teams:
+                rows.append(SheetRow(team=team).model_dump())
+            
+            sheet = OTSheet(sheet_type=sheet_type, rows=rows).model_dump()
+            sheet['sheet_id'] = sheet_id
+            sheet['day'] = day
+            await db.sheets.update_one(
+                {"sheet_id": sheet_id},
+                {"$set": sheet},
+                upsert=True
+            )
     
     await log_version_change("Reset", "All sheets reset to default")
     return {"message": "All sheets reset successfully"}
