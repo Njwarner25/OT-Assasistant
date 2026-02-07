@@ -144,11 +144,13 @@ export const AppProvider = ({ children }) => {
       setLoading(true);
       await seedOfficers();
       await fetchOfficers();
-      await Promise.all([
-        fetchSheet('rdo'),
-        fetchSheet('days_ext'),
-        fetchSheet('nights_ext')
-      ]);
+      const days = ['friday', 'saturday', 'sunday'];
+      const types = ['rdo', 'days_ext', 'nights_ext'];
+      for (const day of days) {
+        for (const type of types) {
+          await fetchSheet(day, type);
+        }
+      }
       setLoading(false);
     };
     init();
@@ -156,32 +158,36 @@ export const AppProvider = ({ children }) => {
 
   const getAllAssignedOfficerIds = useCallback(() => {
     const ids = new Set();
-    Object.values(sheets).forEach(sheet => {
-      if (sheet?.rows) {
-        sheet.rows.forEach(row => {
-          ['assignment_a', 'assignment_b', 'assignment_c', 'assignment_d', 'assignment_e', 'assignment_f'].forEach(key => {
-            if (row[key]?.officer_id) {
-              ids.add(row[key].officer_id);
-            }
+    Object.values(sheets).forEach(daySheets => {
+      Object.values(daySheets).forEach(sheet => {
+        if (sheet?.rows) {
+          sheet.rows.forEach(row => {
+            ['assignment_a', 'assignment_b', 'assignment_c', 'assignment_d', 'assignment_e', 'assignment_f'].forEach(key => {
+              if (row[key]?.officer_id) {
+                ids.add(row[key].officer_id);
+              }
+            });
           });
-        });
-      }
+        }
+      });
     });
     return ids;
   }, [sheets]);
 
-  const checkDuplicate = useCallback((officerId, currentSheetType, currentRowId, currentAssignmentKey) => {
+  const checkDuplicate = useCallback((officerId, currentDay, currentSheetType, currentRowId, currentAssignmentKey) => {
     let count = 0;
-    Object.entries(sheets).forEach(([sheetType, sheet]) => {
-      if (sheet?.rows) {
-        sheet.rows.forEach(row => {
-          ['assignment_a', 'assignment_b', 'assignment_c', 'assignment_d', 'assignment_e', 'assignment_f'].forEach(key => {
-            if (row[key]?.officer_id === officerId) {
-              count++;
-            }
+    Object.entries(sheets).forEach(([day, daySheets]) => {
+      Object.entries(daySheets).forEach(([sheetType, sheet]) => {
+        if (sheet?.rows) {
+          sheet.rows.forEach(row => {
+            ['assignment_a', 'assignment_b', 'assignment_c', 'assignment_d', 'assignment_e', 'assignment_f'].forEach(key => {
+              if (row[key]?.officer_id === officerId) {
+                count++;
+              }
+            });
           });
-        });
-      }
+        }
+      });
     });
     return count > 1;
   }, [sheets]);
