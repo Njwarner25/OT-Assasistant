@@ -169,9 +169,12 @@ const RosterSheet = ({ day, sheetType }) => {
     const updatedRows = [...localSheet.rows];
     let assignment = null;
     
-    // Get current time in CST military format
-    const timestamp = new Date().toLocaleTimeString('en-US', { 
+    // Get current date+time in CST military format
+    const timestamp = new Date().toLocaleString('en-US', { 
       hour12: false, 
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
       hour: '2-digit', 
       minute: '2-digit', 
       second: '2-digit',
