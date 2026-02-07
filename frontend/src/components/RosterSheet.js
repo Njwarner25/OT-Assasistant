@@ -508,7 +508,7 @@ const RosterSheet = ({ day, sheetType }) => {
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 min-w-[200px] print:border-black">Officer</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Star</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-24 print:border-black">Seniority</th>
-              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-20 print:border-black">Time</th>
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-36 print:border-black">Date/Time</th>
             </tr>
           </thead>
           <tbody>
