@@ -105,7 +105,7 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
           {displayValue || 'Select officer...'}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
-          {selectedOfficer && (
+          {selectedOfficer && !disabled && (
             <X 
               className="w-3 h-3 text-slate-400 hover:text-slate-600" 
               onClick={handleClear}
