@@ -209,7 +209,8 @@ const RosterSheet = ({ day, sheetType }) => {
     if (officer) {
       // Block same officer from being used twice on the same day
       if (!officer.isManual && officer.id && isOfficerOnDay(officer.id)) {
-        alert(`${officer.last_name}, ${officer.first_name} is already signed up on ${day.toUpperCase()}. An officer cannot be assigned twice on the same day.`);
+        setDuplicateWarning(`${officer.last_name}, ${officer.first_name} is already signed up on ${day.toUpperCase()}. An officer cannot be assigned twice on the same day.`);
+        setTimeout(() => setDuplicateWarning(null), 5000);
         return;
       }
 
