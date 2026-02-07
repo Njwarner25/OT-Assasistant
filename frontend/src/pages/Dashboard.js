@@ -25,31 +25,33 @@ const Dashboard = () => {
   };
 
   const handleReset = async () => {
-    if (window.confirm('Are you sure you want to reset ALL overtime sheets? This will clear all assignments for all days.')) {
+    setResetStatus('loading');
+    try {
       await resetAllSheets();
+      setResetStatus('success');
+      setTimeout(() => { setResetStatus(null); setShowResetConfirm(false); }, 1500);
+    } catch {
+      setResetStatus('error');
     }
   };
 
   const handlePrint = () => {
-    window.print();
+    try {
+      window.print();
+    } catch (err) {
+      console.error('Print error:', err);
+    }
   };
 
   const handleExportPDF = () => {
     const sheet = sheets[activeDay]?.[activeType];
-    if (!sheet) {
-      alert('No sheet data to export');
-      return;
-    }
+    if (!sheet) return;
 
+    setExportStatus('loading');
     try {
       const doc = new jsPDF('landscape');
       
-      const dayLabels = {
-        friday: 'FRIDAY',
-        saturday: 'SATURDAY',
-        sunday: 'SUNDAY'
-      };
-      
+      const dayLabels = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
       const typeLabels = {
         rdo: 'RDO 2000-0500',
         days_ext: '4HR EXT TOUR (2000-2100 DAYS EXT)',
@@ -65,55 +67,45 @@ const Dashboard = () => {
       doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
       
       const timestamp = new Date().toLocaleString('en-US', { 
-        timeZone: 'America/Chicago', 
-        hour12: false,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+        timeZone: 'America/Chicago', hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
       });
       doc.text(`Generated: ${timestamp} CST`, 14, 36);
 
       const headers = ['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time'];
-      
       const rows = sheet.rows.map(row => {
         const name = row.assignment_a?.officer_display?.split(' — ')[0] || '';
         return [
-          row.team || '',
-          row.officer_number || '',
-          row.deployment_location || '',
-          name,
-          row.assignment_a?.star || '',
-          row.assignment_a?.seniority || '',
-          row.assignment_a?.timestamp || ''
+          row.team || '', row.officer_number || '', row.deployment_location || '',
+          name, row.assignment_a?.star || '', row.assignment_a?.seniority || '', row.assignment_a?.timestamp || ''
         ];
       });
 
       autoTable(doc, {
-        head: [headers],
-        body: rows,
-        startY: 42,
+        head: [headers], body: rows, startY: 42,
         styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
         headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 60 },
-          4: { cellWidth: 20 },
-          5: { cellWidth: 30 },
-          6: { cellWidth: 25 }
-        }
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 25 }, 2: { cellWidth: 40 }, 3: { cellWidth: 60 }, 4: { cellWidth: 20 }, 5: { cellWidth: 30 }, 6: { cellWidth: 25 } }
       });
 
-      const filename = `OT_Roster_${activeDay}_${activeType}_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(filename);
-      
+      // Use blob URL + link click for reliable download across all browsers
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `OT_Roster_${activeDay}_${activeType}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportStatus('success');
+      setTimeout(() => setExportStatus(null), 2000);
     } catch (error) {
       console.error('PDF Export Error:', error);
-      alert('Error exporting PDF. Please try the Print option instead.');
+      setExportStatus('error');
+      setTimeout(() => setExportStatus(null), 3000);
     }
   };
 
