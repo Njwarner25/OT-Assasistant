@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History } from 'lucide-react';
+import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check } from 'lucide-react';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
