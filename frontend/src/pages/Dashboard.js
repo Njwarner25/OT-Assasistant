@@ -121,10 +121,16 @@ const Dashboard = () => {
         columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 25 }, 2: { cellWidth: 40 }, 3: { cellWidth: 60 }, 4: { cellWidth: 20 }, 5: { cellWidth: 30 }, 6: { cellWidth: 25 } }
       });
 
-      // Open PDF in new tab so user can see it, then download or print from there
-      const blob = doc.output('blob');
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      // Open window first (must happen synchronously on click), then embed PDF
+      const pdfWindow = window.open('', '_blank');
+      if (pdfWindow) {
+        const dataUri = doc.output('datauristring');
+        pdfWindow.document.write(
+          `<html><head><title>OT Roster - ${activeDay} - ${activeType}</title></head>` +
+          `<body style="margin:0"><embed src="${dataUri}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;right:0;bottom:0"></embed></body></html>`
+        );
+        pdfWindow.document.close();
+      }
 
       setExportStatus('success');
       setTimeout(() => setExportStatus(null), 2000);
