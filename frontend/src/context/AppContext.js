@@ -215,10 +215,11 @@ export const AppProvider = ({ children }) => {
           await fetchSheet(day, type);
         }
       }
+      await fetchBumpedOfficers();
       setLoading(false);
     };
     init();
-  }, [seedOfficers, fetchOfficers, fetchSheet]);
+  }, [seedOfficers, fetchOfficers, fetchSheet, fetchBumpedOfficers]);
 
   const getAllAssignedOfficerIds = useCallback(() => {
     const ids = new Set();
