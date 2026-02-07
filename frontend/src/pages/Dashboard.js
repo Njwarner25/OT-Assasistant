@@ -177,12 +177,11 @@ const Dashboard = () => {
             </button>
             <button
               onClick={handleExportPDF}
-              disabled={pdfLoading}
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-sm hover:bg-slate-200 transition-colors text-sm"
               data-testid="export-pdf-button"
             >
-              {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {pdfLoading ? 'Generating...' : 'Export PDF'}
+              <Download className="w-4 h-4" />
+              Export PDF
             </button>
             <button
               onClick={() => setShowResetConfirm(true)}
