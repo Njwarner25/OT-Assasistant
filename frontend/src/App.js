@@ -6,11 +6,11 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
 
-// Protected Route wrapper
+// Protected Route wrapper - only for Admin panel
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useApp();
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 };
@@ -18,15 +18,14 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+      {/* Dashboard is now the default - no login required */}
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      
+      {/* Login only needed for Admin access */}
+      <Route path="/login" element={<Login />} />
+      
+      {/* Admin panel requires authentication */}
       <Route
         path="/admin"
         element={
@@ -35,6 +34,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
