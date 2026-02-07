@@ -10,8 +10,9 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
   const inputRef = useRef(null);
 
   // For regular officers, find in list. For manual entries, use assignment data
-  const selectedOfficer = selectedAssignment?.isManual 
-    ? { id: selectedOfficerId, last_name: selectedAssignment.officer_display, isManual: true }
+  const isManualEntry = selectedAssignment?.isManual || (selectedOfficerId && selectedOfficerId.startsWith('manual-'));
+  const selectedOfficer = isManualEntry
+    ? { id: selectedOfficerId, last_name: selectedAssignment?.officer_display || '', isManual: true }
     : officers.find(o => o.id === selectedOfficerId);
 
   const filteredOfficers = officers.filter(officer => {
