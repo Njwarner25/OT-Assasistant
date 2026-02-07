@@ -133,25 +133,22 @@ const RosterSheet = ({ day, sheetType }) => {
     saveSheet(updated);
   };
 
-  // Get all current assignments and find the one with lowest seniority
+  // Get all current assignments
   const getAllAssignments = useCallback(() => {
     if (!localSheet) return [];
     const assignments = [];
     localSheet.rows.forEach((row, rowIndex) => {
-      config.columns.forEach(col => {
-        const assignment = row[`assignment_${col}`];
-        if (assignment?.officer_id && !assignment.isManual) {
-          assignments.push({
-            rowIndex,
-            col,
-            assignment,
-            seniorityDate: parseSeniorityDate(assignment.seniority)
-          });
-        }
-      });
+      const assignment = row.assignment_a;
+      if (assignment?.officer_id && !assignment.isManual) {
+        assignments.push({
+          rowIndex,
+          assignment,
+          seniorityDate: parseSeniorityDate(assignment.seniority)
+        });
+      }
     });
     return assignments;
-  }, [localSheet, config.columns]);
+  }, [localSheet]);
 
   const getFilledSlotCount = useCallback(() => {
     return getAllAssignments().length;
@@ -163,10 +160,10 @@ const RosterSheet = ({ day, sheetType }) => {
     
     // Sort by seniority date descending (most recent = lowest seniority)
     assignments.sort((a, b) => b.seniorityDate - a.seniorityDate);
-    return assignments[0]; // Return the one with most recent (lowest seniority) date
+    return assignments[0];
   }, [getAllAssignments]);
 
-  const handleOfficerSelect = async (rowIndex, assignmentKey, officer) => {
+  const handleOfficerSelect = async (rowIndex, officer) => {
     if (!localSheet || isSheetLocked()) return;
     
     const updatedRows = [...localSheet.rows];
@@ -193,7 +190,7 @@ const RosterSheet = ({ day, sheetType }) => {
         };
       } else {
         // Check if all slots are filled and this is a new entry
-        const currentAssignment = updatedRows[rowIndex][`assignment_${assignmentKey}`];
+        const currentAssignment = updatedRows[rowIndex].assignment_a;
         const isNewEntry = !currentAssignment?.officer_id;
         const filledSlots = getFilledSlotCount();
         
@@ -217,13 +214,13 @@ const RosterSheet = ({ day, sheetType }) => {
               bumped_by_seniority: officer.seniority_date,
               day: day,
               sheet_type: sheetType,
-              assignment_slot: `Row ${lowestSeniority.rowIndex + 1}, Column ${lowestSeniority.col.toUpperCase()}`
+              assignment_slot: `Row ${lowestSeniority.rowIndex + 1}, Team ${localSheet.rows[lowestSeniority.rowIndex].team}`
             });
             
             // Clear the bumped officer's slot
             updatedRows[lowestSeniority.rowIndex] = {
               ...updatedRows[lowestSeniority.rowIndex],
-              [`assignment_${lowestSeniority.col}`]: null
+              assignment_a: null
             };
           } else {
             // New officer doesn't have more seniority - reject
@@ -245,7 +242,7 @@ const RosterSheet = ({ day, sheetType }) => {
     
     updatedRows[rowIndex] = { 
       ...updatedRows[rowIndex], 
-      [`assignment_${assignmentKey}`]: assignment 
+      assignment_a: assignment 
     };
     const updated = { ...localSheet, rows: updatedRows };
     saveSheet(updated);
@@ -266,7 +263,6 @@ const RosterSheet = ({ day, sheetType }) => {
 
   const handleSetAutoLock = async () => {
     if (autoLockDate && autoLockTime) {
-      // Combine date and time into ISO string
       const dateTimeStr = `${autoLockDate}T${autoLockTime}:00`;
       const localDate = new Date(dateTimeStr);
       const isoString = localDate.toISOString();
@@ -498,82 +494,74 @@ const RosterSheet = ({ day, sheetType }) => {
         </div>
       )}
 
-      {/* Data Table */}
+      {/* Data Table - Simplified with single officer column per row */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-xs font-mono" data-testid="roster-table">
           <thead>
             <tr className="bg-slate-100 print:bg-gray-200">
-              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-12 print:border-black">Team</th>
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Team</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-20 print:border-black">Officer #</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-32 print:border-black">Location</th>
-              {config.columns.map(col => (
-                <React.Fragment key={col}>
-                  <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 min-w-[180px] print:border-black">{col.toUpperCase()}</th>
-                  <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Star</th>
-                  <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-24 print:border-black">Sen</th>
-                  <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-20 print:border-black">Time</th>
-                </React.Fragment>
-              ))}
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 min-w-[200px] print:border-black">Officer</th>
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Star</th>
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-24 print:border-black">Seniority</th>
+              <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-20 print:border-black">Time</th>
             </tr>
           </thead>
           <tbody>
-            {localSheet.rows.map((row, rowIndex) => (
-              <tr key={row.id} className="even:bg-slate-50 print:even:bg-white hover:bg-slate-100 print:hover:bg-white" data-testid={`row-${rowIndex}`}>
-                <td className="p-2 border border-slate-300 text-center font-bold text-slate-700 print:border-black">
-                  {row.team}
-                </td>
-                <td className="p-2 border border-slate-300 print:border-black">
-                  <input
-                    type="text"
-                    value={row.officer_number || ''}
-                    onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
-                    disabled={locked}
-                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
-                    data-testid={`officer-number-${rowIndex}`}
-                  />
-                </td>
-                <td className="p-2 border border-slate-300 print:border-black">
-                  <input
-                    type="text"
-                    value={row.deployment_location || ''}
-                    onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
-                    disabled={locked}
-                    className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
-                    data-testid={`deployment-location-${rowIndex}`}
-                  />
-                </td>
-                {config.columns.map(col => {
-                  const assignment = row[`assignment_${col}`];
-                  const hasDuplicate = isDuplicate(assignment?.officer_id);
-                  return (
-                    <React.Fragment key={col}>
-                      <td className={`p-1 border border-slate-300 print:border-black ${hasDuplicate ? 'bg-red-100 text-red-900' : ''}`}>
-                        <div className="flex items-center gap-1">
-                          {hasDuplicate && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />}
-                          <OfficerSelect
-                            officers={officers}
-                            selectedOfficerId={assignment?.officer_id}
-                            selectedAssignment={assignment}
-                            onSelect={(officer) => handleOfficerSelect(rowIndex, col, officer)}
-                            disabled={locked}
-                            testId={`select-${rowIndex}-${col}`}
-                          />
-                        </div>
-                      </td>
-                      <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
-                        {assignment?.star || ''}
-                      </td>
-                      <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
-                        {assignment?.seniority || ''}
-                      </td>
-                      <td className={`p-2 border border-slate-300 text-slate-600 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
-                        {assignment?.timestamp || ''}
-                      </td>
-                    </React.Fragment>
-                  );
-                })}
-              </tr>
-            ))}
+            {localSheet.rows.map((row, rowIndex) => {
+              const assignment = row.assignment_a;
+              const hasDuplicate = isDuplicate(assignment?.officer_id);
+              return (
+                <tr key={row.id} className="even:bg-slate-50 print:even:bg-white hover:bg-slate-100 print:hover:bg-white" data-testid={`row-${rowIndex}`}>
+                  <td className="p-2 border border-slate-300 text-center font-bold text-slate-700 print:border-black">
+                    {row.team}
+                  </td>
+                  <td className="p-2 border border-slate-300 print:border-black">
+                    <input
+                      type="text"
+                      value={row.officer_number || ''}
+                      onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
+                      disabled={locked}
+                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      data-testid={`officer-number-${rowIndex}`}
+                    />
+                  </td>
+                  <td className="p-2 border border-slate-300 print:border-black">
+                    <input
+                      type="text"
+                      value={row.deployment_location || ''}
+                      onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
+                      disabled={locked}
+                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      data-testid={`deployment-location-${rowIndex}`}
+                    />
+                  </td>
+                  <td className={`p-1 border border-slate-300 print:border-black ${hasDuplicate ? 'bg-red-100 text-red-900' : ''}`}>
+                    <div className="flex items-center gap-1">
+                      {hasDuplicate && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />}
+                      <OfficerSelect
+                        officers={officers}
+                        selectedOfficerId={assignment?.officer_id}
+                        selectedAssignment={assignment}
+                        onSelect={(officer) => handleOfficerSelect(rowIndex, officer)}
+                        disabled={locked}
+                        testId={`select-${rowIndex}`}
+                      />
+                    </div>
+                  </td>
+                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                    {assignment?.star || ''}
+                  </td>
+                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                    {assignment?.seniority || ''}
+                  </td>
+                  <td className={`p-2 border border-slate-300 text-slate-600 print:border-black ${hasDuplicate ? 'bg-red-100' : ''}`}>
+                    {assignment?.timestamp || ''}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
