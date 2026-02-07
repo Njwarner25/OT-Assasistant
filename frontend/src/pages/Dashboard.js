@@ -33,43 +33,7 @@ const Dashboard = () => {
   };
 
   const handlePrint = () => {
-    // Open a clean print window with just the sheet content
-    const sheet = sheets[activeDay]?.[activeType];
-    if (!sheet) return;
-    
-    const dayLabels = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
-    const typeLabels = { rdo: 'RDO 2000-0500', days_ext: 'Days EXT 2000-2100', nights_ext: 'Nights EXT 1600-2000' };
-
-    const rows = sheet.rows.map(row => {
-      const a = row.assignment_a;
-      const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
-      return `<tr>
-        <td style="border:1px solid #000;padding:6px;text-align:center;font-weight:bold">${row.team || ''}</td>
-        <td style="border:1px solid #000;padding:6px">${row.officer_number || ''}</td>
-        <td style="border:1px solid #000;padding:6px">${row.deployment_location || ''}</td>
-        <td style="border:1px solid #000;padding:6px">${name}</td>
-        <td style="border:1px solid #000;padding:6px">${a?.star || ''}</td>
-        <td style="border:1px solid #000;padding:6px">${a?.seniority || ''}</td>
-        <td style="border:1px solid #000;padding:6px">${a?.timestamp || ''}</td>
-      </tr>`;
-    }).join('');
-
-    const html = `<!DOCTYPE html><html><head><title>OT Roster - ${dayLabels[activeDay]} - ${typeLabels[activeType]}</title>
-      <style>body{font-family:monospace;margin:20px}table{border-collapse:collapse;width:100%}th{background:#0f172a;color:#fff;padding:8px;border:1px solid #000;text-align:left;font-size:11px}td{font-size:12px}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#666;margin:2px 0}@media print{@page{size:landscape;margin:0.5in}}</style>
-      </head><body>
-      <h1>${dayLabels[activeDay]} — OVERTIME WORKING — ${typeLabels[activeType]}</h1>
-      <p>Sergeant: ${sheet.sergeant_name || '___________'} &nbsp; Star#: ${sheet.sergeant_star || '_____'}</p>
-      <p>Generated: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST</p>
-      <br/>
-      <table><thead><tr><th>Team</th><th>Officer #</th><th>Location</th><th>Officer</th><th>Star</th><th>Seniority</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>
-      <script>window.onload=function(){window.print();}</script>
-      </body></html>`;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    window.print();
   };
 
   // handleExportPDF - show PDF in modal iframe
