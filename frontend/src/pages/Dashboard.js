@@ -72,10 +72,12 @@ const Dashboard = () => {
     }
   };
 
-  // handleExportPDF - fetch blob and trigger same-origin download
+  // handleExportPDF - show PDF in modal iframe
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const pdfUrl = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
+
   const handleExportPDF = () => {
-    // Navigate to the PDF endpoint - browser handles download natively
-    window.location.href = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
+    setShowPdfModal(true);
   };
 
   const days = [
