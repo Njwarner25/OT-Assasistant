@@ -2,13 +2,16 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
-import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download, Calendar } from 'lucide-react';
+import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download, Calendar, X, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Dashboard = () => {
   const [activeDay, setActiveDay] = useState('friday');
   const [activeType, setActiveType] = useState('rdo');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetStatus, setResetStatus] = useState(null);
+  const [exportStatus, setExportStatus] = useState(null);
   const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
   const navigate = useNavigate();
   const printRef = useRef(null);
