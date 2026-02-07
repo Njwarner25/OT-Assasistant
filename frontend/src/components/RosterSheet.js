@@ -184,6 +184,7 @@ const RosterSheet = ({ sheetType }) => {
                           <OfficerSelect
                             officers={officers}
                             selectedOfficerId={assignment?.officer_id}
+                            selectedAssignment={assignment}
                             onSelect={(officer) => handleOfficerSelect(rowIndex, col, officer)}
                             testId={`select-${rowIndex}-${col}`}
                           />
