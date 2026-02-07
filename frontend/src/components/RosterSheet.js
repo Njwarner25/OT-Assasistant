@@ -5,34 +5,40 @@ import { AlertTriangle } from 'lucide-react';
 
 const SHEET_CONFIG = {
   rdo: {
-    title: 'OVERTIME WORKING — RDO 2000–0500',
+    title: 'RDO 2000–0500',
     columns: ['a', 'b']
   },
   days_ext: {
-    title: 'OVERTIME WORKING — 4HR EXT TOUR (2000–2100 DAYS EXT)',
+    title: '4HR EXT TOUR (2000–2100 DAYS EXT)',
     columns: ['a', 'b', 'c', 'd']
   },
   nights_ext: {
-    title: 'OVERTIME WORKING — 4HR EXT TOUR (1600–2000 NIGHTS EXT)',
+    title: '4HR EXT TOUR (1600–2000 NIGHTS EXT)',
     columns: ['a', 'b', 'c', 'd', 'e', 'f']
   }
 };
 
-const RosterSheet = ({ sheetType }) => {
+const DAY_LABELS = {
+  friday: 'FRIDAY',
+  saturday: 'SATURDAY',
+  sunday: 'SUNDAY'
+};
+
+const RosterSheet = ({ day, sheetType }) => {
   const { sheets, updateSheet, officers, checkDuplicate } = useApp();
   const [localSheet, setLocalSheet] = useState(null);
   const config = SHEET_CONFIG[sheetType];
 
   useEffect(() => {
-    if (sheets[sheetType]) {
-      setLocalSheet(sheets[sheetType]);
+    if (sheets[day]?.[sheetType]) {
+      setLocalSheet(sheets[day][sheetType]);
     }
-  }, [sheets, sheetType]);
+  }, [sheets, day, sheetType]);
 
   const saveSheet = useCallback(async (updatedSheet) => {
     setLocalSheet(updatedSheet);
-    await updateSheet(sheetType, updatedSheet);
-  }, [sheetType, updateSheet]);
+    await updateSheet(day, sheetType, updatedSheet);
+  }, [day, sheetType, updateSheet]);
 
   const handleSergeantChange = (field, value) => {
     if (!localSheet) return;
