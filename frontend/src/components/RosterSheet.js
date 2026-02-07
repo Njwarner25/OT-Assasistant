@@ -315,6 +315,58 @@ const RosterSheet = ({ day, sheetType }) => {
     setShowAutoLockModal(false);
   };
 
+  const handleBumpRequest = async (officer) => {
+    if (!officer || !localSheet || officer.isManual) return;
+
+    // Block same-day duplicates
+    if (isOfficerOnDay(officer.id)) {
+      setDuplicateWarning(`${officer.last_name}, ${officer.first_name} is already signed up on ${day.toUpperCase()}. An officer cannot be assigned twice on the same day.`);
+      setTimeout(() => setDuplicateWarning(null), 5000);
+      return;
+    }
+
+    const lowestSeniority = findLowestSeniorityAssignment();
+    const newOfficerSeniority = parseSeniorityDate(officer.seniority_date);
+
+    if (lowestSeniority && newOfficerSeniority < lowestSeniority.seniorityDate) {
+      const bumpedAssignment = lowestSeniority.assignment;
+      const timestamp = new Date().toLocaleString('en-US', {
+        hour12: false, month: '2-digit', day: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Chicago'
+      });
+
+      await addBumpedOfficer({
+        officer_id: bumpedAssignment.officer_id,
+        officer_name: bumpedAssignment.officer_display?.split(' — ')[0] || '',
+        officer_star: bumpedAssignment.star || '',
+        officer_seniority: bumpedAssignment.seniority || '',
+        bumped_by_name: `${officer.last_name}, ${officer.first_name}`,
+        bumped_by_star: officer.star,
+        bumped_by_seniority: officer.seniority_date,
+        day: day,
+        sheet_type: sheetType,
+        assignment_slot: `Row ${lowestSeniority.rowIndex + 1}, Team ${localSheet.rows[lowestSeniority.rowIndex].team}`
+      });
+
+      const updatedRows = [...localSheet.rows];
+      updatedRows[lowestSeniority.rowIndex] = {
+        ...updatedRows[lowestSeniority.rowIndex],
+        assignment_a: {
+          officer_id: officer.id,
+          officer_display: `${officer.last_name}, ${officer.first_name} — ${officer.star} — ${officer.seniority_date}`,
+          star: officer.star,
+          seniority: officer.seniority_date,
+          timestamp: timestamp,
+          isManual: false
+        }
+      };
+      saveSheet({ ...localSheet, rows: updatedRows });
+    } else {
+      setDuplicateWarning(`${officer.last_name}, ${officer.first_name} does not have more seniority than any currently assigned officer.`);
+      setTimeout(() => setDuplicateWarning(null), 5000);
+    }
+  };
+
   if (!localSheet) {
     return <div className="text-slate-500">Loading sheet...</div>;
   }
