@@ -24,6 +24,52 @@ const AdminPanel = () => {
 
   const shareUrl = window.location.origin;
 
+  const DAYS = ['friday', 'saturday', 'sunday'];
+  const SHEET_TYPES = ['rdo', 'days_ext', 'nights_ext'];
+  const TYPE_LABELS = { rdo: 'RDO 2000-0500', days_ext: 'Days EXT 2000-2100', nights_ext: 'Nights EXT 1600-2000' };
+
+  const isSheetLocked = (sheet) => {
+    if (!sheet) return false;
+    if (sheet.locked) return true;
+    if (sheet.auto_lock_enabled && sheet.auto_lock_time && new Date() > new Date(sheet.auto_lock_time)) return true;
+    return false;
+  };
+
+  const allSheetsLocked = DAYS.every(day =>
+    SHEET_TYPES.every(type => isSheetLocked(sheets[day]?.[type]))
+  );
+
+  const buildRosterSummary = () => {
+    let summary = 'UNIT 214 — OVERTIME ROSTER (COMPLETE)\n';
+    summary += '='.repeat(50) + '\n\n';
+    for (const day of DAYS) {
+      summary += `${day.toUpperCase()}\n`;
+      summary += '-'.repeat(50) + '\n';
+      for (const type of SHEET_TYPES) {
+        const sheet = sheets[day]?.[type];
+        if (!sheet) continue;
+        summary += `\n  ${TYPE_LABELS[type]}\n`;
+        summary += '  Team | Officer                    | Star#  | Seniority   | Time\n';
+        for (const row of sheet.rows) {
+          const a = row.assignment_a;
+          const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
+          if (name) {
+            summary += `  ${(row.team || '').padEnd(4)} | ${name.padEnd(26)} | ${(a?.star || '').padEnd(6)} | ${(a?.seniority || '').padEnd(11)} | ${a?.timestamp || ''}\n`;
+          }
+        }
+      }
+      summary += '\n';
+    }
+    summary += `\nView the full roster online: ${shareUrl}\n`;
+    return summary;
+  };
+
+  const handleShareRosterEmail = () => {
+    const subject = encodeURIComponent('Unit 214 — Complete Overtime Roster');
+    const body = encodeURIComponent(buildRosterSummary());
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
   useEffect(() => {
     fetchVersionLogs();
     fetchBumpedOfficers();
