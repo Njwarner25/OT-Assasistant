@@ -293,12 +293,12 @@ async def seed_officers():
         {"last_name": "MUNOZ", "first_name": "DANIEL", "star": "17879", "seniority_date": "04/03/2023"},
     ]
     
-    for officer_data in sample_officers:
+    for officer_data in roster_officers:
         officer = Officer(**officer_data)
         await db.officers.insert_one(officer.model_dump())
     
-    await log_version_change("Seed", f"Seeded {len(sample_officers)} officers")
-    return {"message": f"Seeded {len(sample_officers)} officers"}
+    await log_version_change("Seed", f"Seeded {len(roster_officers)} officers from Unit 214 roster")
+    return {"message": f"Seeded {len(roster_officers)} officers"}
 
 # Include the router
 app.include_router(api_router)
