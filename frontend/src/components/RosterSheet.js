@@ -259,7 +259,8 @@ const RosterSheet = ({ day, sheetType }) => {
             };
           } else {
             // New officer doesn't have more seniority - reject
-            alert(`Cannot add ${officer.last_name}, ${officer.first_name}. All slots are filled and they do not have more seniority than current officers.`);
+            setDuplicateWarning(`Cannot add ${officer.last_name}, ${officer.first_name}. All slots are filled and they do not have more seniority than current officers.`);
+            setTimeout(() => setDuplicateWarning(null), 5000);
             return;
           }
         }
