@@ -294,6 +294,7 @@ export const AppProvider = ({ children }) => {
       clearAllBumped,
       lockSheet,
       unlockSheet,
+      setAutoLock,
       getAllAssignedOfficerIds,
       checkDuplicate
     }}>
