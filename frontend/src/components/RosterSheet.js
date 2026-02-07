@@ -163,6 +163,22 @@ const RosterSheet = ({ day, sheetType }) => {
     return assignments[0];
   }, [getAllAssignments]);
 
+  // Check if officer is already assigned on this day (any sheet type)
+  const isOfficerOnDay = useCallback((officerId) => {
+    if (!officerId) return false;
+    const daySheets = sheets[day];
+    if (!daySheets) return false;
+    for (const type of Object.keys(daySheets)) {
+      const sheet = daySheets[type];
+      if (sheet?.rows) {
+        for (const row of sheet.rows) {
+          if (row.assignment_a?.officer_id === officerId) return true;
+        }
+      }
+    }
+    return false;
+  }, [sheets, day]);
+
   const handleOfficerSelect = async (rowIndex, officer) => {
     if (!localSheet || isSheetLocked()) return;
     
