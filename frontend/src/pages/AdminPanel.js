@@ -499,8 +499,28 @@ const AdminPanel = () => {
                   data-testid="share-email-button"
                 >
                   <Mail className="w-4 h-4" />
-                  Share via Email
+                  Share Sign-Up Link
                 </button>
+
+                {/* Share Complete Roster */}
+                <div className="pt-3 border-t border-slate-200">
+                  <p className="text-xs text-slate-500 mb-2">
+                    Email the complete roster summary once all sheets are locked:
+                  </p>
+                  <button
+                    onClick={handleShareRosterEmail}
+                    disabled={!allSheetsLocked}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-sm text-sm font-semibold transition-colors ${
+                      allSheetsLocked
+                        ? 'bg-green-700 text-white hover:bg-green-800'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                    data-testid="share-roster-email-button"
+                  >
+                    {allSheetsLocked ? <Send className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    {allSheetsLocked ? 'Email Complete Roster' : 'Lock All Sheets First'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
