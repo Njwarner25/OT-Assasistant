@@ -229,13 +229,15 @@ async def get_version_logs():
 
 @api_router.post("/seed")
 async def seed_officers():
-    # Check if officers already exist
-    count = await db.officers.count_documents({})
-    if count > 0:
+    # Check if officers already exist by looking for at least one unique star
+    existing = await db.officers.find_one({"star": "10594"})
+    if existing:
+        count = await db.officers.count_documents({})
         return {"message": "Officers already seeded", "count": count}
     
-    # Clear any partial data first
+    # Clear any existing data to prevent duplicates
     await db.officers.delete_many({})
+    await db.version_logs.delete_many({})
     
     # Sample officer data sorted by seniority (oldest first)
     sample_officers = [
