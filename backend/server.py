@@ -482,7 +482,7 @@ async def export_sheet_pdf(day: str, sheet_type: str):
     return StreamingResponse(
         buf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={"Content-Disposition": f'inline; filename="{filename}"'}
     )
 
 # Include the router
