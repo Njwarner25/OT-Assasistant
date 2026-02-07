@@ -11,9 +11,12 @@ const Dashboard = () => {
   const { resetAllSheets, sheets, isAuthenticated } = useApp();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleAdminClick = () => {
+    if (isAuthenticated) {
+      navigate('/admin');
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleReset = async () => {
