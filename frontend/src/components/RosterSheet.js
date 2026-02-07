@@ -616,6 +616,29 @@ const RosterSheet = ({ day, sheetType }) => {
         </table>
       </div>
 
+      {/* Seniority Bump Request - shown when sheet is full but not locked */}
+      {isSheetFull && !locked && (
+        <div className="p-4 bg-amber-50 border-t-2 border-amber-300 print:hidden" data-testid="bump-request-section">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-bold text-amber-800 uppercase">All Slots Full — Request by Seniority</span>
+          </div>
+          <p className="text-xs text-amber-700 mb-3">
+            If you have more seniority than an assigned officer, select your name below to replace the least senior officer.
+          </p>
+          <div className="max-w-md">
+            <OfficerSelect
+              officers={officers}
+              selectedOfficerId={null}
+              selectedAssignment={null}
+              onSelect={(officer) => handleBumpRequest(officer)}
+              disabled={false}
+              testId="bump-request"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex justify-between print:bg-white print:border-black">
         <span>Last Updated: {new Date(localSheet.updated_at).toLocaleString()}</span>
