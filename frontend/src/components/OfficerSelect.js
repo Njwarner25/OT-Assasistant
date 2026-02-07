@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search, X, Keyboard } from 'lucide-react';
 
-const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSelect, testId }) => {
+const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSelect, disabled, testId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [manualMode, setManualMode] = useState(false);
