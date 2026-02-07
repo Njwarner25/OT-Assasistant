@@ -220,17 +220,13 @@ async def reset_all_sheets():
     days = ["friday", "saturday", "sunday"]
     sheet_types = ["rdo", "days_ext", "nights_ext"]
     
+    # All sheets have the same team structure
+    teams = ['AA', 'AA', 'BB', 'BB', 'CC', 'CC', 'DD', 'DD', 'EE', 'EE']
+    
     for day in days:
         for sheet_type in sheet_types:
             sheet_id = f"{day}_{sheet_type}"
             rows = []
-            if sheet_type == "rdo":
-                teams = ["A", "A", "B", "B", "C", "C"]
-            elif sheet_type == "days_ext":
-                teams = ["A", "A", "B", "B"]
-            else:
-                teams = ["A", "A", "B", "B", "C", "C"]
-            
             for team in teams:
                 rows.append(SheetRow(team=team).model_dump())
             
