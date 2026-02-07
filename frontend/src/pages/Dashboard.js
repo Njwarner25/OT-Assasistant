@@ -74,69 +74,9 @@ const Dashboard = () => {
   };
 
   const handleExportPDF = () => {
-    const sheet = sheets[activeDay]?.[activeType];
-    if (!sheet) return;
-
-    setExportStatus('loading');
-    try {
-      const doc = new jsPDF('landscape');
-      
-      const dayLabels = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
-      const typeLabels = {
-        rdo: 'RDO 2000-0500',
-        days_ext: '4HR EXT TOUR (2000-2100 DAYS EXT)',
-        nights_ext: '4HR EXT TOUR (1600-2000 NIGHTS EXT)'
-      };
-
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${dayLabels[activeDay]} - OVERTIME WORKING - ${typeLabels[activeType]}`, 14, 20);
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Sergeant: ${sheet.sergeant_name || '___________'}    Star#: ${sheet.sergeant_star || '_____'}`, 14, 30);
-      
-      const timestamp = new Date().toLocaleString('en-US', { 
-        timeZone: 'America/Chicago', hour12: false,
-        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-      });
-      doc.text(`Generated: ${timestamp} CST`, 14, 36);
-
-      const headers = ['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time'];
-      const rows = sheet.rows.map(row => {
-        const name = row.assignment_a?.officer_display?.split(' — ')[0] || '';
-        return [
-          row.team || '', row.officer_number || '', row.deployment_location || '',
-          name, row.assignment_a?.star || '', row.assignment_a?.seniority || '', row.assignment_a?.timestamp || ''
-        ];
-      });
-
-      autoTable(doc, {
-        head: [headers], body: rows, startY: 42,
-        styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 25 }, 2: { cellWidth: 40 }, 3: { cellWidth: 60 }, 4: { cellWidth: 20 }, 5: { cellWidth: 30 }, 6: { cellWidth: 25 } }
-      });
-
-      // Open window first (must happen synchronously on click), then embed PDF
-      const pdfWindow = window.open('', '_blank');
-      if (pdfWindow) {
-        const dataUri = doc.output('datauristring');
-        pdfWindow.document.write(
-          `<html><head><title>OT Roster - ${activeDay} - ${activeType}</title></head>` +
-          `<body style="margin:0"><embed src="${dataUri}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;right:0;bottom:0"></embed></body></html>`
-        );
-        pdfWindow.document.close();
-      }
-
-      setExportStatus('success');
-      setTimeout(() => setExportStatus(null), 2000);
-    } catch (error) {
-      console.error('PDF Export Error:', error);
-      setExportStatus('error');
-      setTimeout(() => setExportStatus(null), 3000);
-    }
+    // Direct download from backend - always works
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
+    window.open(url, '_blank');
   };
 
   const days = [
