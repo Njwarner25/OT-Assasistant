@@ -498,24 +498,30 @@ const AdminPanel = () => {
                   Share Sign-Up Link
                 </button>
 
-                {/* Share Complete Roster */}
-                <div className="pt-3 border-t border-slate-200">
-                  <p className="text-xs text-slate-500 mb-2">
-                    Email the complete roster summary once all sheets are locked:
+                {/* Share Locked Roster per Day */}
+                <div className="pt-3 border-t border-slate-200 space-y-2">
+                  <p className="text-xs text-slate-500 mb-1">
+                    Email a day's roster once all its sheets are locked:
                   </p>
-                  <button
-                    onClick={handleShareRosterEmail}
-                    disabled={!allSheetsLocked}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-sm text-sm font-semibold transition-colors ${
-                      allSheetsLocked
-                        ? 'bg-green-700 text-white hover:bg-green-800'
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    }`}
-                    data-testid="share-roster-email-button"
-                  >
-                    {allSheetsLocked ? <Send className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                    {allSheetsLocked ? 'Email Complete Roster' : 'Lock All Sheets First'}
-                  </button>
+                  {['friday', 'saturday', 'sunday'].map(day => {
+                    const locked = isDayLocked(day);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleShareDayEmail(day)}
+                        disabled={!locked}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-sm text-sm font-semibold transition-colors ${
+                          locked
+                            ? 'bg-green-700 text-white hover:bg-green-800'
+                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        }`}
+                        data-testid={`share-roster-${day}`}
+                      >
+                        {locked ? <Send className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                        {locked ? `Email ${DAY_LABELS[day]} Roster` : `${DAY_LABELS[day]} — Lock Sheets First`}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
