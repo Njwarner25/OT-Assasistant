@@ -36,9 +36,7 @@ const Dashboard = () => {
     window.print();
   };
 
-  // handleExportPDF - show PDF in modal iframe
   const [showPdfModal, setShowPdfModal] = useState(false);
-  const pdfUrl = `${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`;
 
   const handleExportPDF = () => {
     setShowPdfModal(true);
