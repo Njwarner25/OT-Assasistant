@@ -79,7 +79,7 @@ const OfficerSelect = ({ officers, selectedOfficerId, onSelect, testId }) => {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-white border border-slate-300 rounded-sm shadow-lg max-h-64 overflow-hidden">
+        <div className="absolute z-[9999] top-full left-0 mt-1 w-72 bg-white border border-slate-300 rounded-sm shadow-lg max-h-64 overflow-hidden">
           {/* Search Input */}
           <div className="p-2 border-b border-slate-200">
             <div className="flex items-center gap-2 px-2 py-1 bg-slate-50 border border-slate-200 rounded-sm">
