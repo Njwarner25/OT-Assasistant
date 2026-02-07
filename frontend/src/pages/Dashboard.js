@@ -192,16 +192,15 @@ const Dashboard = () => {
               <Printer className="w-4 h-4" />
               Print
             </button>
-            <a
-              href={`${process.env.REACT_APP_BACKEND_URL}/api/sheets/${activeDay}/${activeType}/export-pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-sm hover:bg-slate-200 transition-colors text-sm no-underline"
+            <button
+              onClick={handleExportPDF}
+              disabled={pdfLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-sm hover:bg-slate-200 transition-colors text-sm"
               data-testid="export-pdf-button"
             >
-              <Download className="w-4 h-4" />
-              Export PDF
-            </a>
+              {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {pdfLoading ? 'Generating...' : 'Export PDF'}
+            </button>
             <button
               onClick={() => setShowResetConfirm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-sm hover:bg-red-100 transition-colors text-sm"
