@@ -171,6 +171,27 @@ const Dashboard = () => {
         Generated: {new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST — Unit 214 Overtime Roster
       </footer>
 
+      {/* PDF Viewer Modal */}
+      {showPdfModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex flex-col z-50 print:hidden" data-testid="pdf-modal">
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
+            <span className="text-sm font-semibold uppercase tracking-wider">PDF Preview — Right-click or use browser menu to Save / Print</span>
+            <button
+              onClick={() => setShowPdfModal(false)}
+              className="flex items-center gap-1 px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-sm"
+              data-testid="close-pdf-modal"
+            >
+              Close
+            </button>
+          </div>
+          <iframe
+            src={pdfUrl}
+            className="flex-1 w-full bg-white"
+            title="PDF Export"
+          />
+        </div>
+      )}
+
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
