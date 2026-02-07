@@ -8,7 +8,7 @@ import 'jspdf-autotable';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('rdo');
-  const { logout, resetAllSheets, sheets, officers, loading } = useApp();
+  const { resetAllSheets, sheets, isAuthenticated } = useApp();
   const navigate = useNavigate();
 
   const handleLogout = () => {
