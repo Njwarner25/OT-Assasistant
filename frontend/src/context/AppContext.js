@@ -264,6 +264,7 @@ export const AppProvider = ({ children }) => {
       sheets,
       loading,
       versionLogs,
+      bumpedOfficers,
       login,
       logout,
       fetchOfficers,
@@ -274,6 +275,13 @@ export const AppProvider = ({ children }) => {
       updateOfficer,
       deleteOfficer,
       fetchVersionLogs,
+      fetchBumpedOfficers,
+      addBumpedOfficer,
+      markBumpedNotified,
+      deleteBumpedRecord,
+      clearAllBumped,
+      lockSheet,
+      unlockSheet,
       getAllAssignedOfficerIds,
       checkDuplicate
     }}>
