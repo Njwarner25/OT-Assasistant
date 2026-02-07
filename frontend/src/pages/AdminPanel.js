@@ -296,6 +296,45 @@ const AdminPanel = () => {
                 Officers are sorted by seniority date (most senior first).
               </p>
             </div>
+
+            {/* Share Section */}
+            <div className="bg-white rounded-sm border border-slate-200 shadow-sm mt-4">
+              <div className="p-4 border-b border-slate-200">
+                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  Share Roster
+                </h2>
+              </div>
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-slate-500">
+                  Share this link with officers to sign up for overtime:
+                </p>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-sm">
+                  <input
+                    type="text"
+                    value={shareUrl}
+                    readOnly
+                    className="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none"
+                  />
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-xs"
+                    data-testid="copy-link-button"
+                  >
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <button
+                  onClick={handleShareEmail}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm font-semibold"
+                  data-testid="share-email-button"
+                >
+                  <Mail className="w-4 h-4" />
+                  Share via Email
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
