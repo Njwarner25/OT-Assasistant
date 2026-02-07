@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
 import { Shield, Users, FileSpreadsheet, RotateCcw, Printer, Download, Calendar } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Dashboard = () => {
   const [activeDay, setActiveDay] = useState('friday');
