@@ -76,25 +76,20 @@ const Dashboard = () => {
       });
       doc.text(`Generated: ${timestamp} CST`, 14, 36);
 
-      // Table headers
-      const headers = ['Team', 'Off#', 'Location', 'Officer A', 'Star', 'Sen', 'Time', 'Officer B', 'Star', 'Sen', 'Time'];
+      // Table headers - simplified structure
+      const headers = ['Team', 'Officer #', 'Location', 'Officer', 'Star', 'Seniority', 'Time'];
       
       // Table rows
       const rows = sheet.rows.map(row => {
-        const nameA = row.assignment_a?.officer_display?.split(' — ')[0] || '';
-        const nameB = row.assignment_b?.officer_display?.split(' — ')[0] || '';
+        const name = row.assignment_a?.officer_display?.split(' — ')[0] || '';
         return [
           row.team || '',
           row.officer_number || '',
           row.deployment_location || '',
-          nameA,
+          name,
           row.assignment_a?.star || '',
           row.assignment_a?.seniority || '',
-          row.assignment_a?.timestamp || '',
-          nameB,
-          row.assignment_b?.star || '',
-          row.assignment_b?.seniority || '',
-          row.assignment_b?.timestamp || ''
+          row.assignment_a?.timestamp || ''
         ];
       });
 
@@ -102,21 +97,17 @@ const Dashboard = () => {
         head: [headers],
         body: rows,
         startY: 42,
-        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
         headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 15 },
-          1: { cellWidth: 15 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 35 },
-          4: { cellWidth: 15 },
-          5: { cellWidth: 22 },
-          6: { cellWidth: 18 },
-          7: { cellWidth: 35 },
-          8: { cellWidth: 15 },
-          9: { cellWidth: 22 },
-          10: { cellWidth: 18 }
+          0: { cellWidth: 20 },  // Team
+          1: { cellWidth: 25 },  // Officer #
+          2: { cellWidth: 40 },  // Location
+          3: { cellWidth: 60 },  // Officer
+          4: { cellWidth: 20 },  // Star
+          5: { cellWidth: 30 },  // Seniority
+          6: { cellWidth: 25 }   // Time
         }
       });
 
