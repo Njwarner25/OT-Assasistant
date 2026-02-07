@@ -90,6 +90,9 @@ class OTSheet(BaseModel):
     sergeant_name: Optional[str] = None
     sergeant_star: Optional[str] = None
     rows: List[SheetRow] = []
+    locked: bool = False
+    locked_at: Optional[str] = None
+    locked_by: Optional[str] = None
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class LoginRequest(BaseModel):
