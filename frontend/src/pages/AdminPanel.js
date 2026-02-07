@@ -9,6 +9,7 @@ const AdminPanel = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showLogs, setShowLogs] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     last_name: '',
     first_name: '',
@@ -16,9 +17,35 @@ const AdminPanel = () => {
     seniority_date: ''
   });
 
+  const shareUrl = window.location.origin;
+
   useEffect(() => {
     fetchVersionLogs();
   }, [fetchVersionLogs]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShareEmail = () => {
+    const subject = encodeURIComponent('Unit 214 Overtime Roster - Sign Up Link');
+    const body = encodeURIComponent(`You are invited to sign up for overtime.\n\nClick the link below to access the OT Roster:\n${shareUrl}\n\nPlease select your name from the dropdown or type your name manually.\n\nThank you.`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
