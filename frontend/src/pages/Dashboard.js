@@ -172,25 +172,66 @@ const Dashboard = () => {
       </footer>
 
       {/* PDF Viewer Modal */}
-      {showPdfModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex flex-col z-50 print:hidden" data-testid="pdf-modal">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
-            <span className="text-sm font-semibold uppercase tracking-wider">PDF Preview — Right-click or use browser menu to Save / Print</span>
-            <button
-              onClick={() => setShowPdfModal(false)}
-              className="flex items-center gap-1 px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-sm"
-              data-testid="close-pdf-modal"
-            >
-              Close
-            </button>
+      {showPdfModal && (() => {
+        const sheet = sheets[activeDay]?.[activeType];
+        const dayLabels = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
+        const typeLabels = { rdo: 'RDO 2000-0500', days_ext: 'Days EXT 2000-2100', nights_ext: 'Nights EXT 1600-2000' };
+        return (
+          <div className="fixed inset-0 bg-white z-50 overflow-auto" data-testid="pdf-modal" id="export-view">
+            <div className="flex items-center justify-between px-6 py-3 bg-slate-900 text-white print:hidden sticky top-0">
+              <span className="text-sm font-semibold uppercase tracking-wider">Export View — Use Ctrl+P or Cmd+P to Print / Save as PDF</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1 px-4 py-1.5 bg-green-600 rounded hover:bg-green-700 text-sm font-semibold"
+                  data-testid="modal-print-btn"
+                >
+                  <Printer className="w-4 h-4" /> Print / Save PDF
+                </button>
+                <button
+                  onClick={() => setShowPdfModal(false)}
+                  className="flex items-center gap-1 px-4 py-1.5 bg-slate-700 rounded hover:bg-slate-600 text-sm"
+                  data-testid="close-pdf-modal"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="max-w-[900px] mx-auto p-8 font-mono">
+              <h1 className="text-xl font-bold mb-1">{dayLabels[activeDay]} — OVERTIME WORKING — {typeLabels[activeType]}</h1>
+              <p className="text-sm text-slate-600 mb-1">Sergeant: {sheet?.sergeant_name || '___________'} &nbsp;&nbsp; Star#: {sheet?.sergeant_star || '_____'}</p>
+              <p className="text-sm text-slate-500 mb-4">Generated: {new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST</p>
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    {['Team','Officer #','Location','Officer','Star','Seniority','Time'].map(h => (
+                      <th key={h} className="bg-slate-900 text-white text-left text-xs font-bold p-2 border border-black">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(sheet?.rows || []).map((row, i) => {
+                    const a = row.assignment_a;
+                    const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <td className="p-2 border border-slate-300 text-center font-bold">{row.team}</td>
+                        <td className="p-2 border border-slate-300">{row.officer_number || ''}</td>
+                        <td className="p-2 border border-slate-300">{row.deployment_location || ''}</td>
+                        <td className="p-2 border border-slate-300">{name}</td>
+                        <td className="p-2 border border-slate-300">{a?.star || ''}</td>
+                        <td className="p-2 border border-slate-300">{a?.seniority || ''}</td>
+                        <td className="p-2 border border-slate-300">{a?.timestamp || ''}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <p className="text-xs text-slate-400 mt-4">Unit 214 Overtime Roster</p>
+            </div>
           </div>
-          <iframe
-            src={pdfUrl}
-            className="flex-1 w-full bg-white"
-            title="PDF Export"
-          />
-        </div>
-      )}
+        );
+      })()}
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
