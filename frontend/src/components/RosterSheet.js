@@ -381,7 +381,7 @@ const RosterSheet = ({ day, sheetType }) => {
       {/* Sheet Header */}
       <div className="p-4 border-b-2 border-slate-900 print:border-black">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase border-b-2 border-slate-900 pb-1 font-['Chivo']">
+          <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase border-b-2 border-slate-900 pb-1 font-chivo">
             {DAY_LABELS[day]} — OVERTIME WORKING — {config.title}
           </h2>
           

@@ -34,7 +34,7 @@ const Login = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-900 rounded-sm mb-4">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase font-['Chivo']">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase font-chivo">
               OT ROSTER
             </h1>
             <p className="text-sm text-slate-500 mt-2 uppercase tracking-wider">

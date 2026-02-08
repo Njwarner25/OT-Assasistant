@@ -165,7 +165,7 @@ const AdminPanel = () => {
         <div className="max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6" />
-            <h1 className="text-xl font-black tracking-tight uppercase font-['Chivo']">
+            <h1 className="text-xl font-black tracking-tight uppercase font-chivo">
               ADMIN PANEL
             </h1>
             {unnotifiedCount > 0 && (
