@@ -114,6 +114,9 @@ class SheetRow(BaseModel):
     officer_number: Optional[str] = None
     deployment_location: Optional[str] = None
     assignment_a: Optional[Assignment] = None
+    voided: Optional[bool] = False
+    voided_by: Optional[str] = None
+    voided_at: Optional[str] = None
 
 class OTSheet(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -498,6 +501,41 @@ async def clear_all_bumped():
     return {"message": "Cleared"}
 
 # ==================== LOCK / AUTO-LOCK ====================
+
+@api_router.post("/sheets/{period}/{day}/{sheet_type}/void-row/{row_index}")
+async def void_row(period: str, day: str, sheet_type: str, row_index: int, voided_by: str = "Admin"):
+    sheet_id = make_sheet_id(period, day, sheet_type)
+    sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
+    if not sheet:
+        raise HTTPException(status_code=404, detail="Sheet not found")
+    rows = sheet.get("rows", [])
+    if row_index < 0 or row_index >= len(rows):
+        raise HTTPException(status_code=400, detail="Invalid row index")
+    rows[row_index]["voided"] = True
+    rows[row_index]["voided_by"] = voided_by
+    rows[row_index]["voided_at"] = datetime.now(timezone.utc).isoformat()
+    # Clear any existing assignment if voiding
+    rows[row_index]["assignment_a"] = None
+    await db.sheets.update_one({"sheet_id": sheet_id}, {"$set": {"rows": rows, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    await log_version_change("Void Row", f"Voided row {row_index} on {period} {day} {sheet_type}")
+    return {"message": f"Row {row_index} voided"}
+
+@api_router.post("/sheets/{period}/{day}/{sheet_type}/unvoid-row/{row_index}")
+async def unvoid_row(period: str, day: str, sheet_type: str, row_index: int):
+    sheet_id = make_sheet_id(period, day, sheet_type)
+    sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
+    if not sheet:
+        raise HTTPException(status_code=404, detail="Sheet not found")
+    rows = sheet.get("rows", [])
+    if row_index < 0 or row_index >= len(rows):
+        raise HTTPException(status_code=400, detail="Invalid row index")
+    rows[row_index]["voided"] = False
+    rows[row_index]["voided_by"] = None
+    rows[row_index]["voided_at"] = None
+    await db.sheets.update_one({"sheet_id": sheet_id}, {"$set": {"rows": rows, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    await log_version_change("Unvoid Row", f"Unvoided row {row_index} on {period} {day} {sheet_type}")
+    return {"message": f"Row {row_index} restored"}
+
 
 @api_router.post("/sheets/{period}/{day}/{sheet_type}/lock")
 async def lock_sheet(period: str, day: str, sheet_type: str):

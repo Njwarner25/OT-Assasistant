@@ -79,7 +79,7 @@ const getTimeRemaining = (isoString) => {
 };
 
 const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
-  const { sheets, updateSheet, officers, checkDuplicate, addBumpedOfficer, isAuthenticated, lockSheet, unlockSheet, setAutoLock } = useApp();
+  const { sheets, updateSheet, officers, checkDuplicate, addBumpedOfficer, isAuthenticated, lockSheet, unlockSheet, setAutoLock, voidRow, unvoidRow } = useApp();
   const [localSheet, setLocalSheet] = useState(null);
   const [showAutoLockModal, setShowAutoLockModal] = useState(false);
   const [autoLockDate, setAutoLockDate] = useState('');
@@ -155,6 +155,11 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   const getFilledSlotCount = useCallback(() => {
     return getAllAssignments().length;
   }, [getAllAssignments]);
+
+  const getAvailableSlotCount = useCallback(() => {
+    if (!localSheet) return 10;
+    return localSheet.rows.filter(r => !r.voided).length;
+  }, [localSheet]);
 
   const findLowestSeniorityAssignment = useCallback(() => {
     const assignments = getAllAssignments();
@@ -373,7 +378,9 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   }
 
   const filledSlots = getFilledSlotCount();
-  const isSheetFull = filledSlots >= config.maxSlots;
+  const availableSlots = getAvailableSlotCount();
+  const voidedSlots = (localSheet?.rows?.filter(r => r.voided) || []).length;
+  const isSheetFull = filledSlots >= availableSlots;
   const locked = isSheetLocked();
   const deadlinePassed = localSheet.auto_lock_enabled && localSheet.auto_lock_time && isDeadlinePassed(localSheet.auto_lock_time);
 
@@ -389,7 +396,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
           {/* Lock Status & Control */}
           <div className="flex items-center gap-3 print:hidden">
             <span className={`text-xs font-semibold uppercase px-2 py-1 rounded ${isSheetFull ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {filledSlots}/{config.maxSlots} Slots Filled
+              {filledSlots}/{availableSlots} Slots Filled{voidedSlots > 0 && ` · ${voidedSlots} Voided`}
             </span>
             
             {/* Auto-lock countdown */}
@@ -606,6 +613,9 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Star</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-24 print:border-black">Seniority</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-36 print:border-black">Date/Time</th>
+              {isAuthenticated && (
+                <th className="text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-10 print:hidden text-center" title="Void slot">✕</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -614,54 +624,95 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
               const hasDuplicate = isDuplicate(assignment?.officer_id);
               const isEntryFilled = !!assignment?.officer_id;
               const isEntryLocked = isEntryFilled && !isAuthenticated;
-              const rowBg = hasDuplicate ? 'bg-red-100' : isEntryFilled ? 'bg-green-50' : (rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50');
+              const isVoided = !!row.voided;
+              const rowBg = isVoided
+                ? 'bg-slate-200'
+                : hasDuplicate ? 'bg-red-100'
+                : isEntryFilled ? 'bg-green-50'
+                : (rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50');
               return (
                 <tr key={row.id} className={`${rowBg} print:bg-white`} data-testid={`row-${rowIndex}`}>
                   <td className="p-2 border border-slate-300 text-center font-bold text-slate-700 print:border-black">
-                    {row.team}
+                    {isVoided ? (
+                      <span className="text-slate-400 line-through text-xs">VOID</span>
+                    ) : row.team}
                   </td>
                   <td className="p-2 border border-slate-300 print:border-black">
-                    <input
-                      type="text"
-                      value={row.officer_number || ''}
-                      onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
-                      disabled={locked || isEntryLocked}
-                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
-                      data-testid={`officer-number-${rowIndex}`}
-                    />
+                    {!isVoided && (
+                      <input
+                        type="text"
+                        value={row.officer_number || ''}
+                        onChange={(e) => handleRowChange(rowIndex, 'officer_number', e.target.value)}
+                        disabled={locked || isEntryLocked}
+                        className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
+                        data-testid={`officer-number-${rowIndex}`}
+                      />
+                    )}
                   </td>
                   <td className="p-2 border border-slate-300 print:border-black">
-                    <input
-                      type="text"
-                      value={row.deployment_location || ''}
-                      onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
-                      disabled={locked || isEntryLocked}
-                      className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
-                      data-testid={`deployment-location-${rowIndex}`}
-                    />
+                    {!isVoided && (
+                      <input
+                        type="text"
+                        value={row.deployment_location || ''}
+                        onChange={(e) => handleRowChange(rowIndex, 'deployment_location', e.target.value)}
+                        disabled={locked || isEntryLocked}
+                        className={`w-full px-1 py-0.5 border border-slate-200 rounded-sm text-xs print:border-black ${(locked || isEntryLocked) ? 'bg-transparent cursor-not-allowed' : ''}`}
+                        data-testid={`deployment-location-${rowIndex}`}
+                      />
+                    )}
                   </td>
                   <td className={`p-1 border border-slate-300 print:border-black ${hasDuplicate ? 'text-red-900' : ''}`}>
-                    <div className="flex items-center gap-1">
-                      {hasDuplicate && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />}
-                      <OfficerSelect
-                        officers={officers}
-                        selectedOfficerId={assignment?.officer_id}
-                        selectedAssignment={assignment}
-                        onSelect={(officer) => handleOfficerSelect(rowIndex, officer)}
-                        disabled={locked || isEntryLocked}
-                        testId={`select-${rowIndex}`}
-                      />
-                    </div>
+                    {isVoided ? (
+                      <span className="text-xs text-slate-400 italic px-2">Slot voided by admin</span>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        {hasDuplicate && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />}
+                        <OfficerSelect
+                          officers={officers}
+                          selectedOfficerId={assignment?.officer_id}
+                          selectedAssignment={assignment}
+                          onSelect={(officer) => handleOfficerSelect(rowIndex, officer)}
+                          disabled={locked || isEntryLocked}
+                          testId={`select-${rowIndex}`}
+                        />
+                      </div>
+                    )}
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black`}>
-                    {assignment?.star || ''}
+                  <td className="p-2 border border-slate-300 text-slate-900 print:border-black">
+                    {!isVoided && (assignment?.star || '')}
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-900 print:border-black`}>
-                    {assignment?.seniority || ''}
+                  <td className="p-2 border border-slate-300 text-slate-900 print:border-black">
+                    {!isVoided && (assignment?.seniority || '')}
                   </td>
-                  <td className={`p-2 border border-slate-300 text-slate-600 print:border-black`}>
-                    {assignment?.timestamp || ''}
+                  <td className="p-2 border border-slate-300 text-slate-600 print:border-black">
+                    {!isVoided && (assignment?.timestamp || '')}
                   </td>
+                  {/* Void/Unvoid button — admin only, print hidden */}
+                  {isAuthenticated && (
+                    <td className="p-1 border border-slate-300 print:hidden w-10 text-center">
+                      {isVoided ? (
+                        <button
+                          onClick={() => unvoidRow(day, sheetType, rowIndex, period)}
+                          title="Restore this slot"
+                          className="w-6 h-6 flex items-center justify-center rounded-sm bg-green-100 hover:bg-green-200 text-green-700 transition-colors text-xs font-bold"
+                        >
+                          ↩
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Void slot ${rowIndex + 1} (Team ${row.team})? This will remove any assigned officer and make the slot unavailable.`)) {
+                              voidRow(day, sheetType, rowIndex, period);
+                            }
+                          }}
+                          title="Void this slot — make unavailable"
+                          className="w-6 h-6 flex items-center justify-center rounded-sm bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors text-xs font-bold"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

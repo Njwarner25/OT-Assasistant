@@ -206,6 +206,24 @@ export const AppProvider = ({ children }) => {
     }
   }, [fetchSheet]);
 
+  const voidRow = useCallback(async (day, sheetType, rowIndex, period = 'P1') => {
+    try {
+      await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/void-row/${rowIndex}`);
+      await fetchSheet(day, sheetType, period);
+    } catch (error) {
+      console.error('Error voiding row:', error);
+    }
+  }, [fetchSheet]);
+
+  const unvoidRow = useCallback(async (day, sheetType, rowIndex, period = 'P1') => {
+    try {
+      await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/unvoid-row/${rowIndex}`);
+      await fetchSheet(day, sheetType, period);
+    } catch (error) {
+      console.error('Error unvoiding row:', error);
+    }
+  }, [fetchSheet]);
+
   const seedOfficers = useCallback(async () => {
     try {
       await axios.post(`${API}/seed`);
@@ -293,6 +311,8 @@ export const AppProvider = ({ children }) => {
       lockSheet,
       unlockSheet,
       setAutoLock,
+      voidRow,
+      unvoidRow,
       getAllAssignedOfficerIds,
       checkDuplicate
     }}>
