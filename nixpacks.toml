@@ -11,6 +11,7 @@ cmds = [
     "CI=false npm run build --prefix frontend",
       "pip install --break-system-packages -r backend/requirements.txt"
       ]
+      dependsOn = ["install"]
 
       [start]
       cmd = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
