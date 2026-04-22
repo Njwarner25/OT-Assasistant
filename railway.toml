@@ -1,9 +1,12 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd frontend && npm install --legacy-peer-deps && REACT_APP_BACKEND_URL='' npm run build && cd ../backend && pip install -r requirements.txt"
+buildCommand = "npm install --legacy-peer-deps --prefix frontend && REACT_APP_BACKEND_URL='' npm run build --prefix frontend && pip install -r backend/requirements.txt"
 
 [deploy]
-startCommand = "cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT"
+startCommand = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/api/periods"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
+
+[nixpacks]
+providers = ["node", "python"]

@@ -810,6 +810,9 @@ app.add_middleware(
 
 # Serve React frontend static files if built
 STATIC_DIR = Path(__file__).parent.parent / "frontend" / "build"
+if not STATIC_DIR.exists():
+    # Also check relative to cwd (when run from repo root)
+    STATIC_DIR = Path("frontend") / "build"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR / "static")), name="static")
 
