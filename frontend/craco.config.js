@@ -3,104 +3,128 @@ const path = require("path");
 require("dotenv").config();
 
 // Check if we're in development/preview mode (not production build)
-// Craco sets NODE_ENV=development for start, NODE_ENV=production for build
 const isDevServer = process.env.NODE_ENV !== "production";
 
 // Environment variable overrides
 const config = {
-  enableHealthCheck: process.env.ENABLE_HEALTH_CHECK === "true",
-  enableVisualEdits: isDevServer, // Only enable during dev server
+    enableHealthCheck: process.env.ENABLE_HEALTH_CHECK === "true",
+    enableVisualEdits: isDevServer,
 };
 
-// Conditionally load visual edits modules only in dev mode
 let setupDevServer;
 let babelMetadataPlugin;
 
 if (config.enableVisualEdits) {
-  setupDevServer = require("./plugins/visual-edits/dev-server-setup");
-  babelMetadataPlugin = require("./plugins/visual-edits/babel-metadata-plugin");
+    setupDevServer = require("./plugins/visual-edits/dev-server-setup");
+    babelMetadataPlugin = require("./plugins/visual-edits/babel-metadata-plugin");
 }
 
-// Conditionally load health check modules only if enabled
 let WebpackHealthPlugin;
 let setupHealthEndpoints;
 let healthPluginInstance;
 
 if (config.enableHealthCheck) {
-  WebpackHealthPlugin = require("./plugins/health-check/webpack-health-plugin");
-  setupHealthEndpoints = require("./plugins/health-check/health-endpoints");
-  healthPluginInstance = new WebpackHealthPlugin();
+    WebpackHealthPlugin = require("./plugins/health-check/webpack-health-plugin");
+    setupHealthEndpoints = require("./plugins/health-check/health-endpoints");
+    healthPluginInstance = new WebpackHealthPlugin();
+}
+
+// Resolve the ajv codegen path - works with both ajv@6 and ajv@8
+// When nixpacks installs ajv@6, we need a fallback for ajv/dist/compile/codegen
+function resolveAjvCodegenPath() {
+    try {
+          // Try ajv@8 path first (exists in our direct dep)
+      return require.resolve('ajv/dist/compile/codegen');
+    } catch (e) {
+          // ajv@6 doesn't have this path - try finding it via schema-utils
+      try {
+              const schemaUtilsPkg = require.resolve('schema-utils/package.json');
+              const schemaUtilsDir = path.dirname(schemaUtilsPkg);
+              return path.join(schemaUtilsDir, 'node_modules/ajv/dist/compile/codegen');
+      } catch (e2) {
+              // Last resort: try react-scripts' ajv
+            try {
+                      const reactScriptsDir = path.dirname(require.resolve('react-scripts/package.json'));
+                      return path.join(reactScriptsDir, 'node_modules/ajv/dist/compile/codegen');
+            } catch (e3) {
+                      return null;
+            }
+      }
+    }
 }
 
 const webpackConfig = {
-  eslint: {
-    configure: {
-      extends: ["plugin:react-hooks/recommended"],
-      rules: {
-        "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn",
-      },
+    eslint: {
+          configure: {
+                  extends: ["plugin:react-hooks/recommended"],
+                  rules: {
+                            "react-hooks/rules-of-hooks": "error",
+                            "react-hooks/exhaustive-deps": "warn",
+                  },
+          },
     },
-  },
-  webpack: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-    },
-    configure: (webpackConfig) => {
+    webpack: {
+          alias: {
+                  '@': path.resolve(__dirname, 'src'),
+          },
+          configure: (webpackConfig) => {
 
-      // Add ignored patterns to reduce watched directories
-        webpackConfig.watchOptions = {
-          ...webpackConfig.watchOptions,
-          ignored: [
-            '**/node_modules/**',
-            '**/.git/**',
-            '**/build/**',
-            '**/dist/**',
-            '**/coverage/**',
-            '**/public/**',
-        ],
-      };
+            // Fix "Cannot find module 'ajv/dist/compile/codegen'" when ajv@6 is installed
+            const ajvCodegenPath = resolveAjvCodegenPath();
+                  if (ajvCodegenPath) {
+                            webpackConfig.resolve = {
+                                        ...webpackConfig.resolve,
+                                        alias: {
+                                                      ...(webpackConfig.resolve && webpackConfig.resolve.alias),
+                                                      'ajv/dist/compile/codegen': ajvCodegenPath,
+                                        },
+                            };
+                  }
 
-      // Add health check plugin to webpack if enabled
-      if (config.enableHealthCheck && healthPluginInstance) {
-        webpackConfig.plugins.push(healthPluginInstance);
-      }
-      return webpackConfig;
+            webpackConfig.watchOptions = {
+                      ...webpackConfig.watchOptions,
+                      ignored: [
+                                  '**/node_modules/**',
+                                  '**/.git/**',
+                                  '**/build/**',
+                                  '**/dist/**',
+                                  '**/coverage/**',
+                                  '**/public/**',
+                                ],
+            };
+
+            if (config.enableHealthCheck && healthPluginInstance) {
+                      webpackConfig.plugins.push(healthPluginInstance);
+            }
+                  return webpackConfig;
+          },
     },
-  },
 };
 
-// Only add babel metadata plugin during dev server
 if (config.enableVisualEdits && babelMetadataPlugin) {
-  webpackConfig.babel = {
-    plugins: [babelMetadataPlugin],
-  };
+    webpackConfig.babel = {
+          plugins: [babelMetadataPlugin],
+    };
 }
 
 webpackConfig.devServer = (devServerConfig) => {
-  // Apply visual edits dev server setup only if enabled
-  if (config.enableVisualEdits && setupDevServer) {
-    devServerConfig = setupDevServer(devServerConfig);
-  }
+    if (config.enableVisualEdits && setupDevServer) {
+          devServerConfig = setupDevServer(devServerConfig);
+    }
 
-  // Add health check endpoints if enabled
-  if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
-    const originalSetupMiddlewares = devServerConfig.setupMiddlewares;
+    if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
+          const originalSetupMiddlewares = devServerConfig.setupMiddlewares;
 
-    devServerConfig.setupMiddlewares = (middlewares, devServer) => {
-      // Call original setup if exists
-      if (originalSetupMiddlewares) {
-        middlewares = originalSetupMiddlewares(middlewares, devServer);
-      }
+      devServerConfig.setupMiddlewares = (middlewares, devServer) => {
+              if (originalSetupMiddlewares) {
+                        middlewares = originalSetupMiddlewares(middlewares, devServer);
+              }
+              setupHealthEndpoints(devServer, healthPluginInstance);
+              return middlewares;
+      };
+    }
 
-      // Setup health endpoints
-      setupHealthEndpoints(devServer, healthPluginInstance);
-
-      return middlewares;
-    };
-  }
-
-  return devServerConfig;
+    return devServerConfig;
 };
 
 module.exports = webpackConfig;
