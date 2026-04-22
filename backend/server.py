@@ -17,9 +17,15 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME', 'ot_tracker')
+if mongo_url:
+    client = AsyncIOMotorClient(mongo_url)
+    db = client[db_name]
+else:
+    logging.warning("MONGO_URL not set — database features disabled. Set MONGO_URL in Railway env vars.")
+    client = None
+    db = None
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
