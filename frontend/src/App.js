@@ -5,6 +5,7 @@ import { AppProvider, useApp } from "./context/AppContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
+import PeriodSummary from "./pages/PeriodSummary";
 
 // Protected Route wrapper - only for Admin panel
 const ProtectedRoute = ({ children }) => {
@@ -24,6 +25,7 @@ function AppRoutes() {
       
       {/* Login only needed for Admin access */}
       <Route path="/login" element={<Login />} />
+      <Route path="/summary" element={<PeriodSummary />} />
       
       {/* Admin panel requires authentication */}
       <Route

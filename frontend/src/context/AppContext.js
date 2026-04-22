@@ -29,40 +29,40 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchSheet = useCallback(async (day, sheetType) => {
+  const fetchSheet = useCallback(async (day, sheetType, period = 'P1') => {
     try {
-      const response = await axios.get(`${API}/sheets/${day}/${sheetType}`);
+      const response = await axios.get(`${API}/sheets/${period}/${day}/${sheetType}`);
       setSheets(prev => ({
         ...prev,
         [day]: { ...prev[day], [sheetType]: response.data }
       }));
       return response.data;
     } catch (error) {
-      console.error(`Error fetching ${day}/${sheetType} sheet:`, error);
+      console.error(`Error fetching ${period}/${day}/${sheetType} sheet:`, error);
     }
   }, []);
 
-  const updateSheet = useCallback(async (day, sheetType, sheetData) => {
+  const updateSheet = useCallback(async (day, sheetType, sheetData, period = 'P1') => {
     try {
-      const response = await axios.put(`${API}/sheets/${day}/${sheetType}`, sheetData);
+      const response = await axios.put(`${API}/sheets/${period}/${day}/${sheetType}`, sheetData);
       setSheets(prev => ({
         ...prev,
         [day]: { ...prev[day], [sheetType]: response.data }
       }));
       return response.data;
     } catch (error) {
-      console.error(`Error updating ${day}/${sheetType} sheet:`, error);
+      console.error(`Error updating ${period}/${day}/${sheetType} sheet:`, error);
     }
   }, []);
 
-  const resetAllSheets = useCallback(async () => {
+  const resetAllSheets = useCallback(async (period = 'P1') => {
     try {
-      await axios.post(`${API}/sheets/reset`);
-      const days = ['friday', 'saturday', 'sunday'];
+      await axios.post(`${API}/sheets/reset`, null, { params: { period } });
+      const days = ['thursday', 'friday', 'saturday', 'sunday'];
       const types = ['rdo', 'days_ext', 'nights_ext'];
       for (const day of days) {
         for (const type of types) {
-          await fetchSheet(day, type);
+          await fetchSheet(day, type, period);
         }
       }
       return true;
@@ -176,31 +176,31 @@ export const AppProvider = ({ children }) => {
     }
   }, [fetchBumpedOfficers]);
 
-  const lockSheet = useCallback(async (day, sheetType) => {
+  const lockSheet = useCallback(async (day, sheetType, period = 'P1') => {
     try {
-      await axios.post(`${API}/sheets/${day}/${sheetType}/lock`);
-      await fetchSheet(day, sheetType);
+      await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/lock`);
+      await fetchSheet(day, sheetType, period);
     } catch (error) {
       console.error('Error locking sheet:', error);
     }
   }, [fetchSheet]);
 
-  const unlockSheet = useCallback(async (day, sheetType) => {
+  const unlockSheet = useCallback(async (day, sheetType, period = 'P1') => {
     try {
-      await axios.post(`${API}/sheets/${day}/${sheetType}/unlock`);
-      await fetchSheet(day, sheetType);
+      await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/unlock`);
+      await fetchSheet(day, sheetType, period);
     } catch (error) {
       console.error('Error unlocking sheet:', error);
     }
   }, [fetchSheet]);
 
-  const setAutoLock = useCallback(async (day, sheetType, autoLockTime, autoLockEnabled) => {
+  const setAutoLock = useCallback(async (day, sheetType, autoLockTime, autoLockEnabled, period = 'P1') => {
     try {
-      await axios.post(`${API}/sheets/${day}/${sheetType}/set-auto-lock`, {
+      await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/set-auto-lock`, {
         auto_lock_time: autoLockTime,
         auto_lock_enabled: autoLockEnabled
       });
-      await fetchSheet(day, sheetType);
+      await fetchSheet(day, sheetType, period);
     } catch (error) {
       console.error('Error setting auto-lock:', error);
     }

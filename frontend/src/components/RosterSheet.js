@@ -22,6 +22,7 @@ const SHEET_CONFIG = {
 };
 
 const DAY_LABELS = {
+  thursday: 'THURSDAY',
   friday: 'FRIDAY',
   saturday: 'SATURDAY',
   sunday: 'SUNDAY'
@@ -77,7 +78,7 @@ const getTimeRemaining = (isoString) => {
   return `${hours}h ${minutes}m remaining`;
 };
 
-const RosterSheet = ({ day, sheetType }) => {
+const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   const { sheets, updateSheet, officers, checkDuplicate, addBumpedOfficer, isAuthenticated, lockSheet, unlockSheet, setAutoLock } = useApp();
   const [localSheet, setLocalSheet] = useState(null);
   const [showAutoLockModal, setShowAutoLockModal] = useState(false);
@@ -107,7 +108,7 @@ const RosterSheet = ({ day, sheetType }) => {
 
   const saveSheet = useCallback(async (updatedSheet) => {
     setLocalSheet(updatedSheet);
-    await updateSheet(day, sheetType, updatedSheet);
+    await updateSheet(day, sheetType, updatedSheet, period);
   }, [day, sheetType, updateSheet]);
 
   // Check if sheet is locked (either manually or auto-locked)
@@ -291,9 +292,9 @@ const RosterSheet = ({ day, sheetType }) => {
 
   const handleLockToggle = async () => {
     if (localSheet?.locked) {
-      await unlockSheet(day, sheetType);
+      await unlockSheet(day, sheetType, period);
     } else {
-      await lockSheet(day, sheetType);
+      await lockSheet(day, sheetType, period);
     }
   };
 
@@ -303,7 +304,7 @@ const RosterSheet = ({ day, sheetType }) => {
       const localDate = new Date(dateTimeStr);
       const isoString = localDate.toISOString();
       
-      await setAutoLock(day, sheetType, isoString, true);
+      await setAutoLock(day, sheetType, isoString, true, period);
       setShowAutoLockModal(false);
       setAutoLockDate('');
       setAutoLockTime('');
@@ -311,7 +312,7 @@ const RosterSheet = ({ day, sheetType }) => {
   };
 
   const handleDisableAutoLock = async () => {
-    await setAutoLock(day, sheetType, null, false);
+    await setAutoLock(day, sheetType, null, false, period);
     setShowAutoLockModal(false);
   };
 
