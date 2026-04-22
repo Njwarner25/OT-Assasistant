@@ -181,7 +181,7 @@ class VersionLog(BaseModel):
 
 @api_router.post("/auth/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
-    if request.username == "Admin" and request.password == "123456":
+    if request.username == "Admin214" and request.password == "Chicago214":
         return LoginResponse(success=True, message="Login successful", is_admin=True)
     return LoginResponse(success=False, message="Invalid credentials", is_admin=False)
 
