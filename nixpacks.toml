@@ -3,15 +3,14 @@ nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
 
 [phases.install]
 cmds = [
-  "npm install --legacy-peer-deps --prefix frontend",
-    "npm install --prefix frontend --legacy-peer-deps --save-exact ajv@8.17.1 ajv-keywords@5.1.0"
-    ]
+  "npm install --legacy-peer-deps --prefix frontend"
+  ]
 
-    [phases.build]
-    cmds = [
-      "CI=false npm run build --prefix frontend",
-        "pip install --break-system-packages -r backend/requirements.txt"
-        ]
+  [phases.build]
+  cmds = [
+    "CI=false npm run build --prefix frontend",
+      "pip install --break-system-packages -r backend/requirements.txt"
+      ]
 
-        [start]
-        cmd = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
+      [start]
+      cmd = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
