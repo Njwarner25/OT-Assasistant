@@ -8,10 +8,10 @@ cmds = [
 
   [phases.build]
   cmds = [
-    "CI=false npm run build --prefix frontend",
-      "pip install --break-system-packages -r backend/requirements.txt"
-      ]
-      dependsOn = ["install"]
+    "npm install --prefix frontend --save-exact --no-save ajv@8.17.1 ajv-keywords@5.1.0",
+      "CI=false npm run build --prefix frontend",
+        "pip install --break-system-packages -r backend/requirements.txt"
+        ]
 
-      [start]
-      cmd = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
+        [start]
+        cmd = "uvicorn backend.server:app --host 0.0.0.0 --port $PORT"
