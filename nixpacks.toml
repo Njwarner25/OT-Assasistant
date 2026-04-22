@@ -1,10 +1,14 @@
 [phases.setup]
 nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
 
+[phases.install]
+cmds = [
+  "npm install --legacy-peer-deps --prefix frontend"
+]
+
 [phases.build]
 cmds = [
-  "npm install --legacy-peer-deps --prefix frontend",
-  "REACT_APP_BACKEND_URL='' npm run build --prefix frontend",
+  "CI=false npm run build --prefix frontend",
   "pip install -r backend/requirements.txt"
 ]
 
