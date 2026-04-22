@@ -1,5 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -758,8 +760,8 @@ async def seed_officers():
 
     await log_version_change("Seed", f"Seeded {len(roster)} officers")
     return {"message": f"Seeded {len(roster)} officers"}
-
 app.include_router(api_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -767,6 +769,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve React frontend static files if built
+STATIC_DIR = Path(__file__).parent.parent / "frontend" / "build"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR / "static")), name="static")
+
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        # Don't intercept API routes
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        index = STATIC_DIR / "index.html"
+        return FileResponse(str(index))
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
