@@ -193,6 +193,10 @@ async def login(request: LoginRequest):
 
 # ==================== PERIODS ====================
 
+@api_router.get("/version")
+async def get_version():
+    return {"build": "2026-04-23-deploy-verify", "db_connected": client is not None}
+
 @api_router.get("/periods")
 async def get_periods():
     current = get_current_period()
@@ -836,4 +840,5 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if client is not None:
+        client.close()
