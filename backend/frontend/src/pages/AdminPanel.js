@@ -1,32 +1,101 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle, Lock, Send } from 'lucide-react';
+import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle, Lock, Send, FileText, Download, EyeOff, Eye } from 'lucide-react';
+
+const SHEET_TYPES_LIST = ['rdo', 'days_ext', 'nights_ext'];
+const TYPE_LABELS = {
+  rdo: 'RDO 2000-0500',
+  days_ext: 'Days EXT 2000-2100',
+  nights_ext: 'Nights EXT 1600-2000'
+};
+const DAY_LABELS = {
+  thursday: 'THURSDAY',
+  friday: 'FRIDAY',
+  saturday: 'SATURDAY',
+  sunday: 'SUNDAY'
+};
+const EXT_BEATS = {
+  rdo: '',
+  days_ext: '2A',
+  nights_ext: '2C'
+};
+
+// CPD 2026 Periods for date calculation
+const CPD_PERIODS = {
+  "ADJ": { label: "Adj. Week", start: "01/01/2026", end: "01/07/2026" },
+  "P1":  { label: "Period 1",  start: "01/08/2026", end: "02/04/2026" },
+  "P2":  { label: "Period 2",  start: "02/05/2026", end: "03/04/2026" },
+  "P3":  { label: "Period 3",  start: "03/05/2026", end: "04/01/2026" },
+  "P4":  { label: "Period 4",  start: "04/02/2026", end: "04/29/2026" },
+  "P5":  { label: "Period 5",  start: "04/30/2026", end: "05/27/2026" },
+  "P6":  { label: "Period 6",  start: "05/28/2026", end: "06/24/2026" },
+  "P7":  { label: "Period 7",  start: "06/25/2026", end: "07/22/2026" },
+  "P8":  { label: "Period 8",  start: "07/23/2026", end: "08/19/2026" },
+  "P9":  { label: "Period 9",  start: "08/20/2026", end: "09/16/2026" },
+  "P10": { label: "Period 10", start: "09/17/2026", end: "10/14/2026" },
+  "P11": { label: "Period 11", start: "10/15/2026", end: "11/11/2026" },
+  "P12": { label: "Period 12", start: "11/12/2026", end: "12/09/2026" },
+  "P13": { label: "Period 13", start: "12/10/2026", end: "01/06/2027" },
+};
+
+function getOTDate(period, day) {
+  const info = CPD_PERIODS[period];
+  if (!info) return null;
+  const now = new Date();
+  const parseMDY = (s) => { const [m, d, y] = s.split('/'); return new Date(parseInt(y), parseInt(m)-1, parseInt(d)); };
+  const periodStart = parseMDY(info.start);
+  const periodEnd = parseMDY(info.end);
+  const dayMap = { thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+  const targetDow = dayMap[day];
+  let dates = [];
+  let cur = new Date(periodStart);
+  while (cur <= periodEnd) {
+    if (cur.getDay() === targetDow) dates.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates.find(d => d >= now) || dates[dates.length - 1];
+}
+
+function formatDate(date) {
+  if (!date) return '';
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+    timeZone: 'America/Chicago'
+  }).toUpperCase();
+}
 
 const AdminPanel = () => {
   const navigate = useNavigate();
-  const { 
-    officers, addOfficer, updateOfficer, deleteOfficer, 
+  const {
+    officers, addOfficer, updateOfficer, deleteOfficer,
     versionLogs, fetchVersionLogs,
     bumpedOfficers, fetchBumpedOfficers, markBumpedNotified, deleteBumpedRecord, clearAllBumped,
-    sheets
+    sheets, voidRow, unvoidRow, isAuthenticated
   } = useApp();
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showLogs, setShowLogs] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [formData, setFormData] = useState({
-    last_name: '',
-    first_name: '',
-    star: '',
-    seniority_date: ''
-  });
+  const [formData, setFormData] = useState({ last_name: '', first_name: '', star: '', seniority_date: '' });
+
+  // Supervisor Log state
+  const [showSupervisorLog, setShowSupervisorLog] = useState(false);
+  const [logPeriod, setLogPeriod] = useState('P4');
+  const [logDay, setLogDay] = useState('thursday');
+  const [logSheetType, setLogSheetType] = useState('days_ext');
+  const [logSgtName, setLogSgtName] = useState('');
+  const [logSgtStar, setLogSgtStar] = useState('');
+  const [logDate, setLogDate] = useState('');
+
+  // Void management state
+  const [showVoidPanel, setShowVoidPanel] = useState(false);
+  const [voidPeriod, setVoidPeriod] = useState('P4');
+  const [voidDay, setVoidDay] = useState('thursday');
+  const [voidSheetType, setVoidSheetType] = useState('rdo');
 
   const shareUrl = window.location.origin;
-
-  const SHEET_TYPES = ['rdo', 'days_ext', 'nights_ext'];
-  const TYPE_LABELS = { rdo: 'RDO 2000-0500', days_ext: 'Days EXT 2000-2100', nights_ext: 'Nights EXT 1600-2000' };
-  const DAY_LABELS = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
 
   const isSheetLocked = (sheet) => {
     if (!sheet) return false;
@@ -35,18 +104,17 @@ const AdminPanel = () => {
     return false;
   };
 
-  const isDayLocked = (day) =>
-    SHEET_TYPES.every(type => isSheetLocked(sheets[day]?.[type]));
+  const isDayLocked = (day) => SHEET_TYPES_LIST.every(type => isSheetLocked(sheets[day]?.[type]));
 
   const buildDaySummary = (day) => {
     let summary = `UNIT 214 — ${DAY_LABELS[day]} OVERTIME ROSTER\n`;
     summary += '='.repeat(50) + '\n\n';
-    for (const type of SHEET_TYPES) {
+    for (const type of SHEET_TYPES_LIST) {
       const sheet = sheets[day]?.[type];
       if (!sheet) continue;
       summary += `${TYPE_LABELS[type]}\n`;
       summary += '-'.repeat(50) + '\n';
-      summary += 'Team | Officer                    | Star#  | Seniority   | Time\n';
+      summary += 'Team | Officer | Star# | Seniority | Time\n';
       for (const row of sheet.rows) {
         const a = row.assignment_a;
         const name = a?.officer_display?.split(' — ')[0] || a?.officer_display || '';
@@ -58,6 +126,70 @@ const AdminPanel = () => {
     }
     summary += `View the full roster online: ${shareUrl}\n`;
     return summary;
+  };
+
+  // ── Supervisor Log Generation ──────────────────────────
+  const generateSupervisorLog = () => {
+    const sheet = sheets[logDay]?.[logSheetType];
+    const otDate = logDate || (getOTDate(logPeriod, logDay) ? formatDate(getOTDate(logPeriod, logDay)) : '');
+    const extLabel = TYPE_LABELS[logSheetType] || logSheetType;
+    const beatCode = EXT_BEATS[logSheetType] || '';
+
+    let log = '============================================================\n';
+    log += '         CPD UNIT 214 — SUPERVISOR OVERTIME LOG\n';
+    log += '============================================================\n';
+    log += `DATE: ${otDate}\n`;
+    log += `EXTENSION: ${extLabel}\n`;
+    log += `SUPERVISOR: ${logSgtName || '___________________'}  STAR#: ${logSgtStar || '_______'}\n`;
+    log += '------------------------------------------------------------\n';
+    log += `${'#'.padEnd(4)} ${'CALL# (BEAT)'.padEnd(14)} ${'OFFICER NAME'.padEnd(28)} ${'STAR#'.padEnd(8)} TEAM\n`;
+    log += '------------------------------------------------------------\n';
+
+    if (sheet && sheet.rows) {
+      let lineNum = 1;
+      sheet.rows.forEach((row, idx) => {
+        if (row.voided) return;
+        const a = row.assignment_a;
+        const officerName = a?.officer_display ? a.officer_display.split(' — ')[0] : '_________________________';
+        const starNum = a?.star || '______';
+        // Beat / Call# = officer_number field if set, else beatCode + slot
+        const callNum = row.officer_number || (beatCode ? `${beatCode}${lineNum.toString().padStart(2,'0')}` : '______');
+        log += `${lineNum.toString().padEnd(4)} ${callNum.padEnd(14)} ${officerName.padEnd(28)} ${starNum.padEnd(8)} ${row.team}\n`;
+        lineNum++;
+      });
+    } else {
+      log += '  [ No officers signed up yet ]\n';
+    }
+
+    log += '------------------------------------------------------------\n';
+    log += `Generated: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST\n`;
+    log += '============================================================\n';
+    return log;
+  };
+
+  const handleDownloadLog = () => {
+    const content = generateSupervisorLog();
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SupervisorLog_${logPeriod}_${logDay}_${logSheetType}_${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopySupervisorLog = () => {
+    const content = generateSupervisorLog();
+    navigator.clipboard.writeText(content).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
   };
 
   const handleShareDayEmail = (day) => {
@@ -105,8 +237,7 @@ const AdminPanel = () => {
       `- Their Seniority Date: ${bumped.bumped_by_seniority}\n` +
       `- Slot: ${bumped.assignment_slot}\n` +
       `- Time of change: ${new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago' })} CST\n\n` +
-      `We apologize for any inconvenience. Please check the roster for available slots.\n\n` +
-      `Thank you.`
+      `We apologize for any inconvenience. Please check the roster for available slots.\n\nThank you.`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -131,10 +262,8 @@ const AdminPanel = () => {
   const handleEdit = (officer) => {
     setEditingId(officer.id);
     setFormData({
-      last_name: officer.last_name,
-      first_name: officer.first_name,
-      star: officer.star,
-      seniority_date: officer.seniority_date
+      last_name: officer.last_name, first_name: officer.first_name,
+      star: officer.star, seniority_date: officer.seniority_date
     });
     setShowAddForm(false);
   };
@@ -158,6 +287,12 @@ const AdminPanel = () => {
 
   const unnotifiedCount = bumpedOfficers.filter(b => !b.notified).length;
 
+  // Compute the current sheet for void management
+  const voidSheet = sheets[voidDay]?.[voidSheetType];
+  const voidRows = voidSheet?.rows || [];
+  const voidedCount = voidRows.filter(r => r.voided).length;
+  const activeCount = voidRows.filter(r => !r.voided).length;
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-panel">
       {/* Header */}
@@ -165,110 +300,261 @@ const AdminPanel = () => {
         <div className="max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6" />
-            <h1 className="text-xl font-black tracking-tight uppercase font-chivo">
-              ADMIN PANEL
-            </h1>
+            <h1 className="text-xl font-black tracking-tight uppercase font-chivo">ADMIN PANEL</h1>
             {unnotifiedCount > 0 && (
               <span className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-                <Bell className="w-3 h-3" />
-                {unnotifiedCount} Pending
+                <Bell className="w-3 h-3" />{unnotifiedCount} Pending
               </span>
             )}
           </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-sm hover:bg-slate-700 transition-colors text-sm"
-            data-testid="back-button"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-sm hover:bg-slate-700 transition-colors text-sm" data-testid="back-button">
+            <ArrowLeft className="w-4 h-4" />Back to Dashboard
           </button>
         </div>
       </header>
-
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
+
+        {/* ── Slot Void Management Panel ──────────────────── */}
+        <div className="mb-8 bg-white rounded-sm border border-slate-200 shadow-sm">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+              <EyeOff className="w-5 h-5 text-red-600" />Slot Void Management
+            </h2>
+            <button onClick={() => setShowVoidPanel(!showVoidPanel)} className="text-xs text-slate-500 hover:text-slate-700">
+              {showVoidPanel ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {showVoidPanel && (
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-4">
+                Void specific slots on a sheet to reduce the number of available positions. For example, if only 6 officers are needed, void the E slots (rows 9 &amp; 10) to make them unavailable for sign-up.
+              </p>
+              {/* Selectors */}
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Period</label>
+                  <select value={voidPeriod} onChange={(e) => setVoidPeriod(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Day</label>
+                  <select value={voidDay} onChange={(e) => setVoidDay(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {['thursday','friday','saturday','sunday'].map(d => (
+                      <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Sheet</label>
+                  <select value={voidSheetType} onChange={(e) => setVoidSheetType(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {SHEET_TYPES_LIST.map(t => (
+                      <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="self-end">
+                  <span className="text-xs px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-sm font-mono">
+                    Active: {activeCount} / Voided: {voidedCount}
+                  </span>
+                </div>
+              </div>
+              {/* Slot grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {voidRows.map((row, idx) => (
+                  <div key={row.id || idx} className={`flex items-center justify-between p-2 border rounded-sm text-xs font-mono ${row.voided ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
+                    <span className={`font-bold ${row.voided ? 'text-red-500 line-through' : 'text-slate-700'}`}>
+                      {row.team} — Slot {idx+1}
+                    </span>
+                    {row.voided ? (
+                      <button onClick={() => unvoidRow(voidDay, voidSheetType, idx, voidPeriod)}
+                        className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] hover:bg-green-200"
+                        title="Restore slot">↩</button>
+                    ) : (
+                      <button onClick={() => {
+                        if (window.confirm(`Void slot ${idx+1} (Team ${row.team})? This will remove any assigned officer.`)) {
+                          voidRow(voidDay, voidSheetType, idx, voidPeriod);
+                        }
+                      }}
+                        className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] hover:bg-red-200"
+                        title="Void slot">✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-3">
+                Tip: Teams A/B/C/D/E each have 2 slots. Void both E slots (rows 9 &amp; 10) to limit to 8 officers, or void E+D slots for 6 officers.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Supervisor Log Generator ─────────────────────── */}
+        <div className="mb-8 bg-white rounded-sm border border-slate-200 shadow-sm">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />Supervisor Log Generator
+            </h2>
+            <button onClick={() => setShowSupervisorLog(!showSupervisorLog)} className="text-xs text-slate-500 hover:text-slate-700">
+              {showSupervisorLog ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {showSupervisorLog && (
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-4">
+                Generate a CPD supervisor log for any extension sheet. Officers who have signed up will auto-populate with their beat (Call#), name, and star number.
+              </p>
+              {/* Log options */}
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Period</label>
+                  <select value={logPeriod} onChange={(e) => setLogPeriod(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Day</label>
+                  <select value={logDay} onChange={(e) => setLogDay(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {['thursday','friday','saturday','sunday'].map(d => (
+                      <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Extension</label>
+                  <select value={logSheetType} onChange={(e) => setLogSheetType(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {SHEET_TYPES_LIST.map(t => (
+                      <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Supervisor Name</label>
+                  <input type="text" value={logSgtName} onChange={(e) => setLogSgtName(e.target.value)}
+                    placeholder="SGT. LAST NAME" className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm font-mono uppercase w-40" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Star #</label>
+                  <input type="text" value={logSgtStar} onChange={(e) => setLogSgtStar(e.target.value)}
+                    placeholder="#####" className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm font-mono w-24" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Override Date (opt)</label>
+                  <input type="text" value={logDate} onChange={(e) => setLogDate(e.target.value)}
+                    placeholder="Leave blank for auto" className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm font-mono w-52" />
+                </div>
+              </div>
+
+              {/* Preview Log */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-600 uppercase">Log Preview</span>
+                  <div className="flex gap-2">
+                    <button onClick={handleCopySupervisorLog}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 text-white text-xs font-semibold rounded-sm hover:bg-slate-600">
+                      <Copy className="w-3 h-3" />Copy Log
+                    </button>
+                    <button onClick={handleDownloadLog}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-700 text-white text-xs font-semibold rounded-sm hover:bg-blue-600">
+                      <Download className="w-3 h-3" />Download .txt
+                    </button>
+                  </div>
+                </div>
+                <pre className="bg-slate-900 text-green-400 p-4 rounded-sm text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed max-h-80 overflow-y-auto">
+                  {generateSupervisorLog()}
+                </pre>
+              </div>
+
+              {/* Officers assigned to this sheet */}
+              {(() => {
+                const sheet = sheets[logDay]?.[logSheetType];
+                if (!sheet) return <p className="text-xs text-slate-400">No sheet data loaded for this selection.</p>;
+                const assigned = sheet.rows.filter(r => !r.voided && r.assignment_a?.officer_id);
+                return (
+                  <div className="mt-3">
+                    <p className="text-xs font-bold text-slate-600 uppercase mb-2">
+                      Officers Assigned: {assigned.length} / {sheet.rows.filter(r => !r.voided).length} slots
+                    </p>
+                    {assigned.length === 0 && (
+                      <p className="text-xs text-slate-400">No officers signed up yet for this extension.</p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {assigned.map((row, i) => {
+                        const a = row.assignment_a;
+                        const name = a?.officer_display ? a.officer_display.split(' — ')[0] : '';
+                        return (
+                          <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-sm text-xs font-mono">
+                            <span className="font-bold text-slate-500 w-6">{row.team}</span>
+                            <span className="flex-1 text-slate-800">{name}</span>
+                            <span className="text-slate-500">★{a?.star}</span>
+                            <span className="text-slate-400 text-[10px]">{row.officer_number || '—'}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
         {/* Bumped Officers Alert */}
         {bumpedOfficers.length > 0 && (
           <div className="mb-8 bg-red-50 border-2 border-red-300 rounded-sm p-4" data-testid="bumped-officers-section">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-red-800 uppercase flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Bumped Officers - Action Required
+                <AlertTriangle className="w-5 h-5" />Bumped Officers - Action Required
               </h2>
-              <button
-                onClick={() => {
-                  if (window.confirm('Clear all bumped officer records?')) {
-                    clearAllBumped();
-                  }
-                }}
-                className="text-xs text-red-600 hover:text-red-800 underline"
-              >
-                Clear All
-              </button>
+              <button onClick={() => { if (window.confirm('Clear all bumped officer records?')) { clearAllBumped(); } }}
+                className="text-xs text-red-600 hover:text-red-800 underline">Clear All</button>
             </div>
             <p className="text-sm text-red-700 mb-4">
               The following officers were removed from the roster due to seniority. Please notify them via email.
             </p>
             <div className="space-y-3">
               {bumpedOfficers.map((bumped) => (
-                <div 
-                  key={bumped.id} 
-                  className={`p-3 rounded border ${bumped.notified ? 'bg-white border-slate-200' : 'bg-red-100 border-red-300'}`}
-                >
+                <div key={bumped.id} className={`p-3 rounded border ${bumped.notified ? 'bg-white border-slate-200' : 'bg-red-100 border-red-300'}`}>
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-bold text-red-900 text-sm">
-                        {bumped.officer_name} (Star: {bumped.officer_star})
-                      </div>
-                      <div className="text-xs text-red-700 mt-1">
-                        Seniority: {bumped.officer_seniority}
-                      </div>
-                      <div className="text-xs text-slate-600 mt-2">
-                        <strong>Bumped by:</strong> {bumped.bumped_by_name} (Star: {bumped.bumped_by_star}, Seniority: {bumped.bumped_by_seniority})
-                      </div>
-                      <div className="text-xs text-slate-600">
-                        <strong>Sheet:</strong> {bumped.day.toUpperCase()} - {bumped.sheet_type.replace('_', ' ').toUpperCase()}
-                      </div>
-                      <div className="text-xs text-slate-600">
-                        <strong>Slot:</strong> {bumped.assignment_slot}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        <strong>Time:</strong> {new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST
-                      </div>
+                      <div className="font-bold text-red-900 text-sm">{bumped.officer_name} (Star: {bumped.officer_star})</div>
+                      <div className="text-xs text-red-700 mt-1">Seniority: {bumped.officer_seniority}</div>
+                      <div className="text-xs text-slate-600 mt-2"><strong>Bumped by:</strong> {bumped.bumped_by_name} (Star: {bumped.bumped_by_star}, Seniority: {bumped.bumped_by_seniority})</div>
+                      <div className="text-xs text-slate-600"><strong>Sheet:</strong> {bumped.day.toUpperCase()} - {bumped.sheet_type.replace('_', ' ').toUpperCase()}</div>
+                      <div className="text-xs text-slate-600"><strong>Slot:</strong> {bumped.assignment_slot}</div>
+                      <div className="text-xs text-slate-500 mt-1"><strong>Time:</strong> {new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST</div>
                     </div>
                     <div className="flex flex-col gap-2">
                       {bumped.notified ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                          <CheckCircle className="w-4 h-4" />
-                          Notified
-                        </span>
+                        <span className="flex items-center gap-1 text-xs text-green-600 font-semibold"><CheckCircle className="w-4 h-4" />Notified</span>
                       ) : (
                         <>
-                          <button
-                            onClick={() => handleEmailBumped(bumped)}
+                          <button onClick={() => handleEmailBumped(bumped)}
                             className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                            data-testid={`email-bumped-${bumped.id}`}
-                          >
-                            <Mail className="w-3 h-3" />
-                            Email
+                            data-testid={`email-bumped-${bumped.id}`}>
+                            <Mail className="w-3 h-3" />Email
                           </button>
-                          <button
-                            onClick={() => markBumpedNotified(bumped.id)}
+                          <button onClick={() => markBumpedNotified(bumped.id)}
                             className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
-                            data-testid={`mark-notified-${bumped.id}`}
-                          >
-                            <Check className="w-3 h-3" />
-                            Mark Notified
+                            data-testid={`mark-notified-${bumped.id}`}>
+                            <Check className="w-3 h-3" />Mark Notified
                           </button>
                         </>
                       )}
-                      <button
-                        onClick={() => deleteBumpedRecord(bumped.id)}
+                      <button onClick={() => deleteBumpedRecord(bumped.id)}
                         className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300 transition-colors"
-                        data-testid={`delete-bumped-${bumped.id}`}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Delete
+                        data-testid={`delete-bumped-${bumped.id}`}>
+                        <Trash2 className="w-3 h-3" />Delete
                       </button>
                     </div>
                   </div>
@@ -283,92 +569,47 @@ const AdminPanel = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase">
-                  Officer Roster
-                </h2>
-                <button
-                  onClick={() => { setShowAddForm(true); setEditingId(null); }}
+                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase">Officer Roster</h2>
+                <button onClick={() => { setShowAddForm(true); setEditingId(null); }}
                   className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm"
-                  data-testid="add-officer-button"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Officer
+                  data-testid="add-officer-button">
+                  <Plus className="w-4 h-4" />Add Officer
                 </button>
               </div>
-
-              {/* Add/Edit Form */}
               {(showAddForm || editingId) && (
                 <form onSubmit={handleSubmit} className="p-4 bg-slate-50 border-b border-slate-200">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Last Name</label>
-                      <input
-                        type="text"
-                        value={formData.last_name}
-                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase"
-                        required
-                        data-testid="input-last-name"
-                      />
+                      <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-last-name" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">First Name</label>
-                      <input
-                        type="text"
-                        value={formData.first_name}
-                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase"
-                        required
-                        data-testid="input-first-name"
-                      />
+                      <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-first-name" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Star #</label>
-                      <input
-                        type="text"
-                        value={formData.star}
-                        onChange={(e) => setFormData({ ...formData, star: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono"
-                        required
-                        data-testid="input-star"
-                      />
+                      <input type="text" value={formData.star} onChange={(e) => setFormData({ ...formData, star: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-star" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Seniority Date</label>
-                      <input
-                        type="text"
-                        value={formData.seniority_date}
-                        onChange={(e) => setFormData({ ...formData, seniority_date: e.target.value })}
-                        placeholder="MM/DD/YYYY"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono"
-                        required
-                        data-testid="input-seniority"
-                      />
+                      <input type="text" value={formData.seniority_date} onChange={(e) => setFormData({ ...formData, seniority_date: e.target.value })}
+                        placeholder="MM/DD/YYYY" className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-seniority" />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button
-                      type="submit"
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm"
-                      data-testid="save-officer-button"
-                    >
-                      <Save className="w-4 h-4" />
-                      {editingId ? 'Update' : 'Save'}
+                    <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm" data-testid="save-officer-button">
+                      <Save className="w-4 h-4" />{editingId ? 'Update' : 'Save'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={cancelEdit}
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-sm"
-                      data-testid="cancel-button"
-                    >
-                      <X className="w-4 h-4" />
-                      Cancel
+                    <button type="button" onClick={cancelEdit} className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-sm" data-testid="cancel-button">
+                      <X className="w-4 h-4" />Cancel
                     </button>
                   </div>
                 </form>
               )}
-
-              {/* Officers Table */}
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
@@ -389,18 +630,10 @@ const AdminPanel = () => {
                         <td className="p-3 text-xs font-mono text-slate-900 border-b border-slate-100">{officer.seniority_date}</td>
                         <td className="p-3 border-b border-slate-100">
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEdit(officer)}
-                              className="p-1 text-slate-500 hover:text-slate-900 transition-colors"
-                              data-testid={`edit-officer-${officer.id}`}
-                            >
+                            <button onClick={() => handleEdit(officer)} className="p-1 text-slate-500 hover:text-slate-900 transition-colors" data-testid={`edit-officer-${officer.id}`}>
                               <Pencil className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => handleDelete(officer.id)}
-                              className="p-1 text-red-500 hover:text-red-700 transition-colors"
-                              data-testid={`delete-officer-${officer.id}`}
-                            >
+                            <button onClick={() => handleDelete(officer.id)} className="p-1 text-red-500 hover:text-red-700 transition-colors" data-testid={`delete-officer-${officer.id}`}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -422,13 +655,9 @@ const AdminPanel = () => {
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <History className="w-5 h-5" />
-                  Change Log
+                  <History className="w-5 h-5" />Change Log
                 </h2>
-                <button
-                  onClick={() => setShowLogs(!showLogs)}
-                  className="text-xs text-slate-500 hover:text-slate-700"
-                >
+                <button onClick={() => setShowLogs(!showLogs)} className="text-xs text-slate-500 hover:text-slate-700">
                   {showLogs ? 'Hide' : 'Show'}
                 </button>
               </div>
@@ -441,9 +670,7 @@ const AdminPanel = () => {
                       {versionLogs.slice(0, 20).map((log) => (
                         <li key={log.id} className="p-3">
                           <div className="text-xs font-mono text-slate-900">{log.notes}</div>
-                          <div className="text-[10px] text-slate-400 mt-1">
-                            v{log.version} — {new Date(log.updated_at).toLocaleString()}
-                          </div>
+                          <div className="text-[10px] text-slate-400 mt-1">v{log.version} — {new Date(log.updated_at).toLocaleString()}</div>
                         </li>
                       ))}
                     </ul>
@@ -451,72 +678,40 @@ const AdminPanel = () => {
                 </div>
               )}
             </div>
-
             {/* Info Box */}
             <div className="bg-slate-100 rounded-sm border border-slate-200 p-4">
               <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Admin Info</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Use this panel to manage the officer roster. Changes are automatically saved and logged.
-                Officers are sorted by seniority date (most senior first).
+                Use this panel to manage the officer roster, void slots to limit availability, and generate supervisor logs. Changes are automatically saved and logged.
               </p>
             </div>
-
             {/* Share Section */}
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <Mail className="w-5 h-5" />
-                  Share Roster
+                  <Mail className="w-5 h-5" />Share Roster
                 </h2>
               </div>
               <div className="p-4 space-y-3">
-                <p className="text-xs text-slate-500">
-                  Share this link with officers to sign up for overtime:
-                </p>
+                <p className="text-xs text-slate-500">Share this link with officers to sign up for overtime:</p>
                 <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-sm">
-                  <input
-                    type="text"
-                    value={shareUrl}
-                    readOnly
-                    className="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none"
-                  />
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-xs"
-                    data-testid="copy-link-button"
-                  >
+                  <input type="text" value={shareUrl} readOnly className="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none" />
+                  <button onClick={handleCopyLink} className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-xs" data-testid="copy-link-button">
                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <button
-                  onClick={handleShareEmail}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm font-semibold"
-                  data-testid="share-email-button"
-                >
-                  <Mail className="w-4 h-4" />
-                  Share Sign-Up Link
+                <button onClick={handleShareEmail} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm font-semibold" data-testid="share-email-button">
+                  <Mail className="w-4 h-4" />Share Sign-Up Link
                 </button>
-
-                {/* Share Locked Roster per Day */}
                 <div className="pt-3 border-t border-slate-200 space-y-2">
-                  <p className="text-xs text-slate-500 mb-1">
-                    Email a day's roster once all its sheets are locked:
-                  </p>
+                  <p className="text-xs text-slate-500 mb-1">Email a day's roster once all its sheets are locked:</p>
                   {['friday', 'saturday', 'sunday'].map(day => {
                     const locked = isDayLocked(day);
                     return (
-                      <button
-                        key={day}
-                        onClick={() => handleShareDayEmail(day)}
-                        disabled={!locked}
-                        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-sm text-sm font-semibold transition-colors ${
-                          locked
-                            ? 'bg-green-700 text-white hover:bg-green-800'
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        }`}
-                        data-testid={`share-roster-${day}`}
-                      >
+                      <button key={day} onClick={() => handleShareDayEmail(day)} disabled={!locked}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-sm text-sm font-semibold transition-colors ${locked ? 'bg-green-700 text-white hover:bg-green-800' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                        data-testid={`share-roster-${day}`}>
                         {locked ? <Send className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                         {locked ? `Email ${DAY_LABELS[day]} Roster` : `${DAY_LABELS[day]} — Lock Sheets First`}
                       </button>
