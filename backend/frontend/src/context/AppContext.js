@@ -5,13 +5,13 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const AppContext = createContext();
-
 export const useApp = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [officers, setOfficers] = useState([]);
   const [sheets, setSheets] = useState({
+    thursday: { rdo: null, days_ext: null, nights_ext: null },
     friday: { rdo: null, days_ext: null, nights_ext: null },
     saturday: { rdo: null, days_ext: null, nights_ext: null },
     sunday: { rdo: null, days_ext: null, nights_ext: null }
@@ -85,9 +85,7 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setIsAuthenticated(false);
-  }, []);
+  const logout = useCallback(() => { setIsAuthenticated(false); }, []);
 
   const addOfficer = useCallback(async (officerData) => {
     try {
@@ -197,8 +195,7 @@ export const AppProvider = ({ children }) => {
   const setAutoLock = useCallback(async (day, sheetType, autoLockTime, autoLockEnabled, period = 'P1') => {
     try {
       await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/set-auto-lock`, {
-        auto_lock_time: autoLockTime,
-        auto_lock_enabled: autoLockEnabled
+        auto_lock_time: autoLockTime, auto_lock_enabled: autoLockEnabled
       });
       await fetchSheet(day, sheetType, period);
     } catch (error) {
@@ -238,7 +235,7 @@ export const AppProvider = ({ children }) => {
       setLoading(true);
       await seedOfficers();
       await fetchOfficers();
-      const days = ['friday', 'saturday', 'sunday'];
+      const days = ['thursday', 'friday', 'saturday', 'sunday'];
       const types = ['rdo', 'days_ext', 'nights_ext'];
       for (const day of days) {
         for (const type of types) {
@@ -257,9 +254,7 @@ export const AppProvider = ({ children }) => {
       Object.values(daySheets).forEach(sheet => {
         if (sheet?.rows) {
           sheet.rows.forEach(row => {
-            if (row.assignment_a?.officer_id) {
-              ids.add(row.assignment_a.officer_id);
-            }
+            if (row.assignment_a?.officer_id) ids.add(row.assignment_a.officer_id);
           });
         }
       });
@@ -275,9 +270,7 @@ export const AppProvider = ({ children }) => {
       Object.values(daySheets).forEach(sheet => {
         if (sheet?.rows) {
           sheet.rows.forEach(row => {
-            if (row.assignment_a?.officer_id === officerId) {
-              count++;
-            }
+            if (row.assignment_a?.officer_id === officerId) count++;
           });
         }
       });
@@ -287,34 +280,13 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      isAuthenticated,
-      officers,
-      sheets,
-      loading,
-      versionLogs,
-      bumpedOfficers,
-      login,
-      logout,
-      fetchOfficers,
-      fetchSheet,
-      updateSheet,
-      resetAllSheets,
-      addOfficer,
-      updateOfficer,
-      deleteOfficer,
-      fetchVersionLogs,
-      fetchBumpedOfficers,
-      addBumpedOfficer,
-      markBumpedNotified,
-      deleteBumpedRecord,
-      clearAllBumped,
-      lockSheet,
-      unlockSheet,
-      setAutoLock,
-      voidRow,
-      unvoidRow,
-      getAllAssignedOfficerIds,
-      checkDuplicate
+      isAuthenticated, officers, sheets, loading, versionLogs, bumpedOfficers,
+      login, logout, fetchOfficers, fetchSheet, updateSheet, resetAllSheets,
+      addOfficer, updateOfficer, deleteOfficer,
+      fetchVersionLogs, fetchBumpedOfficers, addBumpedOfficer,
+      markBumpedNotified, deleteBumpedRecord, clearAllBumped,
+      lockSheet, unlockSheet, setAutoLock, voidRow, unvoidRow,
+      getAllAssignedOfficerIds, checkDuplicate
     }}>
       {children}
     </AppContext.Provider>
