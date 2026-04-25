@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Shield, ArrowLeft, Plus, Pencil, Trash2, Save, X, History, Mail, Copy, Check, AlertTriangle, Bell, CheckCircle, Lock, Send, FileText, Download, EyeOff, Eye } from 'lucide-react';
 
+const API = process.env.REACT_APP_BACKEND_URL || '';
+
 const SHEET_TYPES_LIST = ['rdo', 'days_ext', 'nights_ext'];
 const TYPE_LABELS = {
   rdo: 'RDO 2000-0500',
@@ -21,7 +23,6 @@ const EXT_BEATS = {
   nights_ext: '2C'
 };
 
-// CPD 2026 Periods for date calculation
 const CPD_PERIODS = {
   "ADJ": { label: "Adj. Week", start: "01/01/2026", end: "01/07/2026" },
   "P1":  { label: "Period 1",  start: "01/08/2026", end: "02/04/2026" },
@@ -152,7 +153,6 @@ const AdminPanel = () => {
         const a = row.assignment_a;
         const officerName = a?.officer_display ? a.officer_display.split(' — ')[0] : '_________________________';
         const starNum = a?.star || '______';
-        // Beat / Call# = officer_number field if set, else beatCode + slot
         const callNum = row.officer_number || (beatCode ? `${beatCode}${lineNum.toString().padStart(2,'0')}` : '______');
         log += `${lineNum.toString().padEnd(4)} ${callNum.padEnd(14)} ${officerName.padEnd(28)} ${starNum.padEnd(8)} ${row.team}\n`;
         lineNum++;
@@ -165,6 +165,15 @@ const AdminPanel = () => {
     log += `Generated: ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST\n`;
     log += '============================================================\n';
     return log;
+  };
+
+  // ── Download filled CPD-11.455 PDF from backend ────────
+  const handleDownloadFilledPDF = () => {
+    const params = new URLSearchParams();
+    if (logSgtName) params.set('sgt_name', logSgtName);
+    if (logSgtStar) params.set('sgt_star', logSgtStar);
+    const url = `${API}/api/sheets/${logPeriod}/${logDay}/${logSheetType}/supervisor-log-pdf?${params.toString()}`;
+    window.open(url, '_blank');
   };
 
   const handleDownloadLog = () => {
@@ -231,13 +240,7 @@ const AdminPanel = () => {
     const body = encodeURIComponent(
       `Dear ${bumped.officer_name},\n\n` +
       `This is to inform you that you have been removed from the overtime roster for ${bumped.day.toUpperCase()} - ${bumped.sheet_type.replace('_', ' ').toUpperCase()} due to seniority.\n\n` +
-      `Details:\n` +
-      `- Your Seniority Date: ${bumped.officer_seniority}\n` +
-      `- Bumped by: ${bumped.bumped_by_name} (Star: ${bumped.bumped_by_star})\n` +
-      `- Their Seniority Date: ${bumped.bumped_by_seniority}\n` +
-      `- Slot: ${bumped.assignment_slot}\n` +
-      `- Time of change: ${new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago' })} CST\n\n` +
-      `We apologize for any inconvenience. Please check the roster for available slots.\n\nThank you.`
+      `Details:\n- Your Seniority Date: ${bumped.officer_seniority}\n- Bumped by: ${bumped.bumped_by_name} (Star: ${bumped.bumped_by_star})\n- Their Seniority Date: ${bumped.bumped_by_seniority}\n- Slot: ${bumped.assignment_slot}\n- Time of change: ${new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago' })} CST\n\nWe apologize for any inconvenience. Please check the roster for available slots.\n\nThank you.`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -245,49 +248,32 @@ const AdminPanel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await updateOfficer(editingId, formData);
-        setEditingId(null);
-      } else {
-        await addOfficer(formData);
-        setShowAddForm(false);
-      }
+      if (editingId) { await updateOfficer(editingId, formData); setEditingId(null); }
+      else { await addOfficer(formData); setShowAddForm(false); }
       setFormData({ last_name: '', first_name: '', star: '', seniority_date: '' });
       await fetchVersionLogs();
-    } catch (error) {
-      alert('Error saving officer');
-    }
+    } catch (error) { alert('Error saving officer'); }
   };
 
   const handleEdit = (officer) => {
     setEditingId(officer.id);
-    setFormData({
-      last_name: officer.last_name, first_name: officer.first_name,
-      star: officer.star, seniority_date: officer.seniority_date
-    });
+    setFormData({ last_name: officer.last_name, first_name: officer.first_name, star: officer.star, seniority_date: officer.seniority_date });
     setShowAddForm(false);
   };
 
   const handleDelete = async (officerId) => {
     if (window.confirm('Are you sure you want to delete this officer?')) {
-      try {
-        await deleteOfficer(officerId);
-        await fetchVersionLogs();
-      } catch (error) {
-        alert('Error deleting officer');
-      }
+      try { await deleteOfficer(officerId); await fetchVersionLogs(); }
+      catch (error) { alert('Error deleting officer'); }
     }
   };
 
   const cancelEdit = () => {
-    setEditingId(null);
-    setShowAddForm(false);
+    setEditingId(null); setShowAddForm(false);
     setFormData({ last_name: '', first_name: '', star: '', seniority_date: '' });
   };
 
   const unnotifiedCount = bumpedOfficers.filter(b => !b.notified).length;
-
-  // Compute the current sheet for void management
   const voidSheet = sheets[voidDay]?.[voidSheetType];
   const voidRows = voidSheet?.rows || [];
   const voidedCount = voidRows.filter(r => r.voided).length;
@@ -295,7 +281,6 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-panel">
-      {/* Header */}
       <header className="bg-slate-900 text-white">
         <div className="max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -314,128 +299,88 @@ const AdminPanel = () => {
       </header>
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
 
-        {/* ── Slot Void Management Panel ──────────────────── */}
+        {/* ── Slot Void Management Panel ── */}
         <div className="mb-8 bg-white rounded-sm border border-slate-200 shadow-sm">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
               <EyeOff className="w-5 h-5 text-red-600" />Slot Void Management
             </h2>
-            <button onClick={() => setShowVoidPanel(!showVoidPanel)} className="text-xs text-slate-500 hover:text-slate-700">
-              {showVoidPanel ? 'Hide' : 'Show'}
-            </button>
+            <button onClick={() => setShowVoidPanel(!showVoidPanel)} className="text-xs text-slate-500 hover:text-slate-700">{showVoidPanel ? 'Hide' : 'Show'}</button>
           </div>
           {showVoidPanel && (
             <div className="p-4">
-              <p className="text-xs text-slate-500 mb-4">
-                Void specific slots on a sheet to reduce the number of available positions. For example, if only 6 officers are needed, void the E slots (rows 9 &amp; 10) to make them unavailable for sign-up.
-              </p>
-              {/* Selectors */}
+              <p className="text-xs text-slate-500 mb-4">Void specific slots to limit available positions. Example: void E slots (rows 9 &amp; 10) to reduce to 8 officers, or void D+E for 6.</p>
               <div className="flex flex-wrap gap-4 mb-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Period</label>
-                  <select value={voidPeriod} onChange={(e) => setVoidPeriod(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                  <select value={voidPeriod} onChange={(e) => setVoidPeriod(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Day</label>
-                  <select value={voidDay} onChange={(e) => setVoidDay(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {['thursday','friday','saturday','sunday'].map(d => (
-                      <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>
-                    ))}
+                  <select value={voidDay} onChange={(e) => setVoidDay(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {['thursday','friday','saturday','sunday'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Sheet</label>
-                  <select value={voidSheetType} onChange={(e) => setVoidSheetType(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {SHEET_TYPES_LIST.map(t => (
-                      <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-                    ))}
+                  <select value={voidSheetType} onChange={(e) => setVoidSheetType(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {SHEET_TYPES_LIST.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
                 <div className="self-end">
-                  <span className="text-xs px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-sm font-mono">
-                    Active: {activeCount} / Voided: {voidedCount}
-                  </span>
+                  <span className="text-xs px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-sm font-mono">Active: {activeCount} / Voided: {voidedCount}</span>
                 </div>
               </div>
-              {/* Slot grid */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {voidRows.map((row, idx) => (
                   <div key={row.id || idx} className={`flex items-center justify-between p-2 border rounded-sm text-xs font-mono ${row.voided ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
-                    <span className={`font-bold ${row.voided ? 'text-red-500 line-through' : 'text-slate-700'}`}>
-                      {row.team} — Slot {idx+1}
-                    </span>
+                    <span className={`font-bold ${row.voided ? 'text-red-500 line-through' : 'text-slate-700'}`}>{row.team} — Slot {idx+1}</span>
                     {row.voided ? (
-                      <button onClick={() => unvoidRow(voidDay, voidSheetType, idx, voidPeriod)}
-                        className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] hover:bg-green-200"
-                        title="Restore slot">↩</button>
+                      <button onClick={() => unvoidRow(voidDay, voidSheetType, idx, voidPeriod)} className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] hover:bg-green-200">↩</button>
                     ) : (
-                      <button onClick={() => {
-                        if (window.confirm(`Void slot ${idx+1} (Team ${row.team})? This will remove any assigned officer.`)) {
-                          voidRow(voidDay, voidSheetType, idx, voidPeriod);
-                        }
-                      }}
-                        className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] hover:bg-red-200"
-                        title="Void slot">✕</button>
+                      <button onClick={() => { if (window.confirm(`Void slot ${idx+1} (Team ${row.team})?`)) { voidRow(voidDay, voidSheetType, idx, voidPeriod); } }} className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] hover:bg-red-200">✕</button>
                     )}
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400 mt-3">
-                Tip: Teams A/B/C/D/E each have 2 slots. Void both E slots (rows 9 &amp; 10) to limit to 8 officers, or void E+D slots for 6 officers.
-              </p>
             </div>
           )}
         </div>
 
-        {/* ── Supervisor Log Generator ─────────────────────── */}
+        {/* ── Supervisor Log Generator ── */}
         <div className="mb-8 bg-white rounded-sm border border-slate-200 shadow-sm">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />Supervisor Log Generator
             </h2>
-            <button onClick={() => setShowSupervisorLog(!showSupervisorLog)} className="text-xs text-slate-500 hover:text-slate-700">
-              {showSupervisorLog ? 'Hide' : 'Show'}
-            </button>
+            <button onClick={() => setShowSupervisorLog(!showSupervisorLog)} className="text-xs text-slate-500 hover:text-slate-700">{showSupervisorLog ? 'Hide' : 'Show'}</button>
           </div>
           {showSupervisorLog && (
             <div className="p-4">
               <p className="text-xs text-slate-500 mb-4">
-                Generate a CPD supervisor log for any extension sheet. Officers who have signed up will auto-populate with their beat (Call#), name, and star number.
+                Generate a CPD-11.455 Supervisor Management Log. Select an extension — officer Name, Star#, and Call# auto-populate. Download as a filled, editable PDF ready to attach to an email.
               </p>
-              {/* Log options */}
+
+              {/* Options row */}
               <div className="flex flex-wrap gap-4 mb-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Period</label>
-                  <select value={logPeriod} onChange={(e) => setLogPeriod(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                  <select value={logPeriod} onChange={(e) => setLogPeriod(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {Object.keys({ADJ:1,P1:1,P2:1,P3:1,P4:1,P5:1,P6:1,P7:1,P8:1,P9:1,P10:1,P11:1,P12:1,P13:1}).map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Day</label>
-                  <select value={logDay} onChange={(e) => setLogDay(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {['thursday','friday','saturday','sunday'].map(d => (
-                      <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>
-                    ))}
+                  <select value={logDay} onChange={(e) => setLogDay(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {['thursday','friday','saturday','sunday'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase()+d.slice(1)}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Extension</label>
-                  <select value={logSheetType} onChange={(e) => setLogSheetType(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
-                    {SHEET_TYPES_LIST.map(t => (
-                      <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-                    ))}
+                  <select value={logSheetType} onChange={(e) => setLogSheetType(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm">
+                    {SHEET_TYPES_LIST.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
                 <div>
@@ -448,46 +393,49 @@ const AdminPanel = () => {
                   <input type="text" value={logSgtStar} onChange={(e) => setLogSgtStar(e.target.value)}
                     placeholder="#####" className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm font-mono w-24" />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Override Date (opt)</label>
-                  <input type="text" value={logDate} onChange={(e) => setLogDate(e.target.value)}
-                    placeholder="Leave blank for auto" className="px-3 py-1.5 border border-slate-300 rounded-sm text-sm font-mono w-52" />
-                </div>
               </div>
 
-              {/* Preview Log */}
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {/* ── PRIMARY: Download Filled CPD-11.455 PDF ── */}
+                <button onClick={handleDownloadFilledPDF}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-sm hover:bg-blue-800 transition-colors shadow-sm">
+                  <Download className="w-4 h-4" />
+                  Download Filled PDF (CPD-11.455)
+                </button>
+                <button onClick={handleCopySupervisorLog}
+                  className="flex items-center gap-1 px-3 py-2 bg-slate-700 text-white text-xs font-semibold rounded-sm hover:bg-slate-600">
+                  <Copy className="w-3 h-3" />Copy Text Log
+                </button>
+                <button onClick={handleDownloadLog}
+                  className="flex items-center gap-1 px-3 py-2 bg-slate-500 text-white text-xs font-semibold rounded-sm hover:bg-slate-400">
+                  <Download className="w-3 h-3" />Download .txt
+                </button>
+              </div>
+
+              {/* Info note */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-sm text-xs text-blue-800">
+                <strong>PDF auto-fills:</strong> Officer Name · Star# · Call# (Beat) · Unit: 214 · Watch: 4TH · Date (today, CST). The PDF remains editable so supervisors can complete the remaining fields before printing or emailing.
+              </div>
+
+              {/* Text preview */}
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-600 uppercase">Log Preview</span>
-                  <div className="flex gap-2">
-                    <button onClick={handleCopySupervisorLog}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 text-white text-xs font-semibold rounded-sm hover:bg-slate-600">
-                      <Copy className="w-3 h-3" />Copy Log
-                    </button>
-                    <button onClick={handleDownloadLog}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-700 text-white text-xs font-semibold rounded-sm hover:bg-blue-600">
-                      <Download className="w-3 h-3" />Download .txt
-                    </button>
-                  </div>
-                </div>
-                <pre className="bg-slate-900 text-green-400 p-4 rounded-sm text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed max-h-80 overflow-y-auto">
+                <span className="text-xs font-bold text-slate-600 uppercase block mb-2">Text Preview</span>
+                <pre className="bg-slate-900 text-green-400 p-4 rounded-sm text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed max-h-72 overflow-y-auto">
                   {generateSupervisorLog()}
                 </pre>
               </div>
 
-              {/* Officers assigned to this sheet */}
+              {/* Officers assigned summary */}
               {(() => {
                 const sheet = sheets[logDay]?.[logSheetType];
-                if (!sheet) return <p className="text-xs text-slate-400">No sheet data loaded for this selection.</p>;
+                if (!sheet) return <p className="text-xs text-slate-400">No sheet data loaded.</p>;
                 const assigned = sheet.rows.filter(r => !r.voided && r.assignment_a?.officer_id);
                 return (
                   <div className="mt-3">
                     <p className="text-xs font-bold text-slate-600 uppercase mb-2">
-                      Officers Assigned: {assigned.length} / {sheet.rows.filter(r => !r.voided).length} slots
+                      Officers Signed Up: {assigned.length} / {sheet.rows.filter(r => !r.voided).length} active slots
                     </p>
-                    {assigned.length === 0 && (
-                      <p className="text-xs text-slate-400">No officers signed up yet for this extension.</p>
-                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {assigned.map((row, i) => {
                         const a = row.assignment_a;
@@ -509,19 +457,12 @@ const AdminPanel = () => {
           )}
         </div>
 
-        {/* Bumped Officers Alert */}
         {bumpedOfficers.length > 0 && (
           <div className="mb-8 bg-red-50 border-2 border-red-300 rounded-sm p-4" data-testid="bumped-officers-section">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-red-800 uppercase flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />Bumped Officers - Action Required
-              </h2>
-              <button onClick={() => { if (window.confirm('Clear all bumped officer records?')) { clearAllBumped(); } }}
-                className="text-xs text-red-600 hover:text-red-800 underline">Clear All</button>
+              <h2 className="text-lg font-bold text-red-800 uppercase flex items-center gap-2"><AlertTriangle className="w-5 h-5" />Bumped Officers - Action Required</h2>
+              <button onClick={() => { if (window.confirm('Clear all bumped officer records?')) { clearAllBumped(); } }} className="text-xs text-red-600 hover:text-red-800 underline">Clear All</button>
             </div>
-            <p className="text-sm text-red-700 mb-4">
-              The following officers were removed from the roster due to seniority. Please notify them via email.
-            </p>
             <div className="space-y-3">
               {bumpedOfficers.map((bumped) => (
                 <div key={bumped.id} className={`p-3 rounded border ${bumped.notified ? 'bg-white border-slate-200' : 'bg-red-100 border-red-300'}`}>
@@ -529,9 +470,8 @@ const AdminPanel = () => {
                     <div>
                       <div className="font-bold text-red-900 text-sm">{bumped.officer_name} (Star: {bumped.officer_star})</div>
                       <div className="text-xs text-red-700 mt-1">Seniority: {bumped.officer_seniority}</div>
-                      <div className="text-xs text-slate-600 mt-2"><strong>Bumped by:</strong> {bumped.bumped_by_name} (Star: {bumped.bumped_by_star}, Seniority: {bumped.bumped_by_seniority})</div>
-                      <div className="text-xs text-slate-600"><strong>Sheet:</strong> {bumped.day.toUpperCase()} - {bumped.sheet_type.replace('_', ' ').toUpperCase()}</div>
-                      <div className="text-xs text-slate-600"><strong>Slot:</strong> {bumped.assignment_slot}</div>
+                      <div className="text-xs text-slate-600 mt-2"><strong>Bumped by:</strong> {bumped.bumped_by_name} (Star: {bumped.bumped_by_star})</div>
+                      <div className="text-xs text-slate-600"><strong>Sheet:</strong> {bumped.day.toUpperCase()} - {bumped.sheet_type.replace('_',' ').toUpperCase()}</div>
                       <div className="text-xs text-slate-500 mt-1"><strong>Time:</strong> {new Date(bumped.bumped_at).toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false })} CST</div>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -539,23 +479,11 @@ const AdminPanel = () => {
                         <span className="flex items-center gap-1 text-xs text-green-600 font-semibold"><CheckCircle className="w-4 h-4" />Notified</span>
                       ) : (
                         <>
-                          <button onClick={() => handleEmailBumped(bumped)}
-                            className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-                            data-testid={`email-bumped-${bumped.id}`}>
-                            <Mail className="w-3 h-3" />Email
-                          </button>
-                          <button onClick={() => markBumpedNotified(bumped.id)}
-                            className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
-                            data-testid={`mark-notified-${bumped.id}`}>
-                            <Check className="w-3 h-3" />Mark Notified
-                          </button>
+                          <button onClick={() => handleEmailBumped(bumped)} className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"><Mail className="w-3 h-3" />Email</button>
+                          <button onClick={() => markBumpedNotified(bumped.id)} className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"><Check className="w-3 h-3" />Mark Notified</button>
                         </>
                       )}
-                      <button onClick={() => deleteBumpedRecord(bumped.id)}
-                        className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300 transition-colors"
-                        data-testid={`delete-bumped-${bumped.id}`}>
-                        <Trash2 className="w-3 h-3" />Delete
-                      </button>
+                      <button onClick={() => deleteBumpedRecord(bumped.id)} className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded hover:bg-slate-300"><Trash2 className="w-3 h-3" />Delete</button>
                     </div>
                   </div>
                 </div>
@@ -565,62 +493,41 @@ const AdminPanel = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Officers List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase">Officer Roster</h2>
-                <button onClick={() => { setShowAddForm(true); setEditingId(null); }}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm"
-                  data-testid="add-officer-button">
+                <button onClick={() => { setShowAddForm(true); setEditingId(null); }} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm" data-testid="add-officer-button">
                   <Plus className="w-4 h-4" />Add Officer
                 </button>
               </div>
               {(showAddForm || editingId) && (
                 <form onSubmit={handleSubmit} className="p-4 bg-slate-50 border-b border-slate-200">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Last Name</label>
-                      <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-last-name" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">First Name</label>
-                      <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-first-name" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Star #</label>
-                      <input type="text" value={formData.star} onChange={(e) => setFormData({ ...formData, star: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-star" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Seniority Date</label>
-                      <input type="text" value={formData.seniority_date} onChange={(e) => setFormData({ ...formData, seniority_date: e.target.value })}
-                        placeholder="MM/DD/YYYY" className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-seniority" />
-                    </div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Last Name</label>
+                      <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value.toUpperCase()})} className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-last-name" /></div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">First Name</label>
+                      <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value.toUpperCase()})} className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono uppercase" required data-testid="input-first-name" /></div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Star #</label>
+                      <input type="text" value={formData.star} onChange={(e) => setFormData({...formData, star: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-star" /></div>
+                    <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Seniority Date</label>
+                      <input type="text" value={formData.seniority_date} onChange={(e) => setFormData({...formData, seniority_date: e.target.value})} placeholder="MM/DD/YYYY" className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm font-mono" required data-testid="input-seniority" /></div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm" data-testid="save-officer-button">
-                      <Save className="w-4 h-4" />{editingId ? 'Update' : 'Save'}
-                    </button>
-                    <button type="button" onClick={cancelEdit} className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-sm" data-testid="cancel-button">
-                      <X className="w-4 h-4" />Cancel
-                    </button>
+                    <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm" data-testid="save-officer-button"><Save className="w-4 h-4" />{editingId ? 'Update' : 'Save'}</button>
+                    <button type="button" onClick={cancelEdit} className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-sm" data-testid="cancel-button"><X className="w-4 h-4" />Cancel</button>
                   </div>
                 </form>
               )}
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100">
-                      <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Last Name</th>
-                      <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">First Name</th>
-                      <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Star #</th>
-                      <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Seniority</th>
-                      <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Actions</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="bg-slate-100">
+                    <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Last Name</th>
+                    <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">First Name</th>
+                    <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Star #</th>
+                    <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Seniority</th>
+                    <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-3 border-b border-slate-200">Actions</th>
+                  </tr></thead>
                   <tbody>
                     {officers.map((officer, index) => (
                       <tr key={officer.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} data-testid={`officer-row-${officer.id}`}>
@@ -630,12 +537,8 @@ const AdminPanel = () => {
                         <td className="p-3 text-xs font-mono text-slate-900 border-b border-slate-100">{officer.seniority_date}</td>
                         <td className="p-3 border-b border-slate-100">
                           <div className="flex gap-2">
-                            <button onClick={() => handleEdit(officer)} className="p-1 text-slate-500 hover:text-slate-900 transition-colors" data-testid={`edit-officer-${officer.id}`}>
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete(officer.id)} className="p-1 text-red-500 hover:text-red-700 transition-colors" data-testid={`delete-officer-${officer.id}`}>
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <button onClick={() => handleEdit(officer)} className="p-1 text-slate-500 hover:text-slate-900" data-testid={`edit-officer-${officer.id}`}><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => handleDelete(officer.id)} className="p-1 text-red-500 hover:text-red-700" data-testid={`delete-officer-${officer.id}`}><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -643,31 +546,21 @@ const AdminPanel = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
-                Total Officers: {officers.length}
-              </div>
+              <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Total Officers: {officers.length}</div>
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Version Log */}
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <History className="w-5 h-5" />Change Log
-                </h2>
-                <button onClick={() => setShowLogs(!showLogs)} className="text-xs text-slate-500 hover:text-slate-700">
-                  {showLogs ? 'Hide' : 'Show'}
-                </button>
+                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2"><History className="w-5 h-5" />Change Log</h2>
+                <button onClick={() => setShowLogs(!showLogs)} className="text-xs text-slate-500 hover:text-slate-700">{showLogs ? 'Hide' : 'Show'}</button>
               </div>
               {showLogs && (
                 <div className="max-h-96 overflow-y-auto">
-                  {versionLogs.length === 0 ? (
-                    <p className="p-4 text-xs text-slate-400">No changes logged yet</p>
-                  ) : (
+                  {versionLogs.length === 0 ? <p className="p-4 text-xs text-slate-400">No changes logged yet</p> : (
                     <ul className="divide-y divide-slate-100">
-                      {versionLogs.slice(0, 20).map((log) => (
+                      {versionLogs.slice(0,20).map((log) => (
                         <li key={log.id} className="p-3">
                           <div className="text-xs font-mono text-slate-900">{log.notes}</div>
                           <div className="text-[10px] text-slate-400 mt-1">v{log.version} — {new Date(log.updated_at).toLocaleString()}</div>
@@ -678,35 +571,28 @@ const AdminPanel = () => {
                 </div>
               )}
             </div>
-            {/* Info Box */}
             <div className="bg-slate-100 rounded-sm border border-slate-200 p-4">
               <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Admin Info</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Use this panel to manage the officer roster, void slots to limit availability, and generate supervisor logs. Changes are automatically saved and logged.
-              </p>
+              <p className="text-xs text-slate-500 leading-relaxed">Manage the roster, void slots to limit availability, and generate pre-filled supervisor PDFs. All changes are logged.</p>
             </div>
-            {/* Share Section */}
             <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
               <div className="p-4 border-b border-slate-200">
-                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <Mail className="w-5 h-5" />Share Roster
-                </h2>
+                <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2"><Mail className="w-5 h-5" />Share Roster</h2>
               </div>
               <div className="p-4 space-y-3">
                 <p className="text-xs text-slate-500">Share this link with officers to sign up for overtime:</p>
                 <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-sm">
                   <input type="text" value={shareUrl} readOnly className="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none" />
                   <button onClick={handleCopyLink} className="flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 rounded-sm hover:bg-slate-300 transition-colors text-xs" data-testid="copy-link-button">
-                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}{copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
                 <button onClick={handleShareEmail} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors text-sm font-semibold" data-testid="share-email-button">
                   <Mail className="w-4 h-4" />Share Sign-Up Link
                 </button>
                 <div className="pt-3 border-t border-slate-200 space-y-2">
-                  <p className="text-xs text-slate-500 mb-1">Email a day's roster once all its sheets are locked:</p>
-                  {['friday', 'saturday', 'sunday'].map(day => {
+                  <p className="text-xs text-slate-500 mb-1">Email a day's roster once all sheets are locked:</p>
+                  {['friday','saturday','sunday'].map(day => {
                     const locked = isDayLocked(day);
                     return (
                       <button key={day} onClick={() => handleShareDayEmail(day)} disabled={!locked}
