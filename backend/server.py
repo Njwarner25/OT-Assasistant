@@ -737,7 +737,7 @@ async def generate_supervisor_log_pdf(
     # Each officer block has 4 sub-rows; total height ≈ 42 pts per block
     # First "CALL NO." row Y from bottom ≈ 700
     FIRST_ROW_Y = 700
-    BLOCK_H     = 42    # pts per officer block
+    BLOCK_H     = 21    # pts per officer row (CPD form)
 
     # X positions within officer rows
     CALL_X  = 22    # Call No.
