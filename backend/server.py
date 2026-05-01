@@ -546,7 +546,7 @@ async def export_sheet_pdf(period: str, day: str, sheet_type: str):
     day_labels = {d: d.upper() for d in OT_DAYS}
     type_labels = {
         "rdo": "RDO 2000-0500",
-        "days_ext": "4HR EXT TOUR (2000-2100 DAYS EXT)",
+        "days_ext": "4HR EXT TOUR (2100-0100 DAYS EXT)",
         "nights_ext": "4HR EXT TOUR (1600-2000 NIGHTS EXT)"
     }
     period_label = CPD_PERIODS.get(period, {}).get('label', period)
@@ -712,7 +712,7 @@ async def generate_supervisor_log_pdf(
 
     type_labels = {
         "rdo":        "RDO  2000-0500",
-        "days_ext":   "DAYS EXT  2000-2100",
+        "days_ext":   "DAYS EXT  2100-0100",
         "nights_ext": "NIGHTS EXT  1600-2000",
     }
     day_labels_upper = {
