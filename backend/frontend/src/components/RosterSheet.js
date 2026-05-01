@@ -10,7 +10,7 @@ const SHEET_CONFIG = {
     maxSlots: 10
   },
   days_ext: {
-    title: '4HR EXT TOUR (2000–2100 DAYS EXT)',
+    title: '4HR EXT TOUR (2100-0100 DAYS EXT)',
     teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   },
