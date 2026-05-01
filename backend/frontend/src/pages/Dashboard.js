@@ -131,7 +131,7 @@ const Dashboard = () => {
 
     const sheetTypes = [
       { id: 'rdo',        label: 'RDO 2000–0500',       hours: 9 },
-      { id: 'days_ext',   label: 'Days EXT 2000–2100',   hours: 4 },
+      { id: 'days_ext',   label: 'Days EXT 2100-0100',   hours: 4 },
       { id: 'nights_ext', label: 'Nights EXT 1600–2000', hours: 4 },
         ];
 
