@@ -20,7 +20,7 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
     return (
       officer.last_name.toLowerCase().includes(searchLower) ||
       officer.first_name.toLowerCase().includes(searchLower) ||
-      officer.star.includes(search)
+      officer.star.includes(search)h
     );
   });
 
@@ -224,7 +224,7 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
                       data-testid={`${testId}-option-${officer.id}`}
                     >
                       <div className="font-mono">
-                        {officer.last_name}, {officer.first_name} — {officer.star} — {officer.seniority_date}
+                        {officer.last_name}, {officer.first_name}  -  {officer.star}  -  {officer.seniority_date}
                       </div>
                     </button>
                   ))
