@@ -62,10 +62,10 @@ const PeriodSummary = () => {
             <Shield className="w-5 h-5" />
             <div>
               <h1 className="text-lg font-black tracking-tight uppercase leading-none">
-                OT ACCUMULATION — Unit 214
+                OT ACCUMULATION  -  Unit 214
               </h1>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">
-                Period & Year-to-Date Totals · 2026
+                Period & Year-to-Date Totals  -  2026
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ const PeriodSummary = () => {
           <div className="bg-white border border-slate-200 rounded-sm">
             <div className="px-4 py-3 border-b border-slate-200">
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                Year-to-Date OT Totals — All Periods
+                Year-to-Date OT Totals  -  All Periods
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Aggregate across all 13 CPD 2026 operational periods
@@ -161,8 +161,8 @@ const PeriodSummary = () => {
                           i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                         }`}
                       >
-                        <td className={`${tdCls} font-medium text-slate-900`}>{r.officer_display || '—'}</td>
-                        <td className={`${tdCls} text-center text-slate-600`}>{r.star || '—'}</td>
+                        <td className={`${tdCls} font-medium text-slate-900`}>{r.officer_display || ' - '}</td>
+                        <td className={`${tdCls} text-center text-slate-600`}>{r.star || ' - '}</td>
                         <td className={`${tdCls} text-center ${r.ytd_rdo > 0 ? 'text-slate-900 font-bold' : 'text-slate-300'}`}>
                           {r.ytd_rdo || 0}
                         </td>
