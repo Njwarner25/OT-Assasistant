@@ -86,7 +86,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   const [autoLockTime, setAutoLockTime] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
-  const [confirmedRows, setConfirmedRows] = useState({});
+
   const config = SHEET_CONFIG[sheetType];
 
   useEffect(() => {
@@ -374,9 +374,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
     }
   };
 
-  const handleConfirmSignUp = (rowIndex) => {
-    setConfirmedRows(prev => ({ ...prev, [rowIndex]: true }));
-  };
+
 
   if (!localSheet) {
     return <div className="text-slate-500">Loading sheet...</div>;
@@ -629,7 +627,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
               const hasDuplicate = isDuplicate(assignment?.officer_id);
               const isEntryFilled = !!assignment?.officer_id;
               const isEntryLocked = isEntryFilled && !isAuthenticated;
-              const isConfirmed = !!confirmedRows[rowIndex];
+
               const isVoided = !!row.voided;
               const rowBg = isVoided
                 ? 'bg-slate-200'
@@ -678,27 +676,16 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
                             officers={officers}
                             selectedOfficerId={assignment?.officer_id}
                             selectedAssignment={assignment}
-                            onSelect={(officer) => { handleOfficerSelect(rowIndex, officer); setConfirmedRows(prev => { const n = {...prev}; delete n[rowIndex]; return n; }); }}
+                            onSelect={(officer) => handleOfficerSelect(rowIndex, officer)}
                             disabled={locked || isEntryLocked}
                             testId={`select-${rowIndex}`}
                           />
                         </div>
-                        {isEntryFilled && !locked && !isVoided && (
-                          isConfirmed ? (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-green-100 border border-green-400 rounded text-green-700 text-xs font-bold print:hidden">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Signed up!
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleConfirmSignUp(rowIndex)}
-                              className="flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors print:hidden"
-                              data-testid={`confirm-btn-${rowIndex}`}
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              Submit
-                            </button>
-                          )
+                        {isEntryFilled && !isVoided && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-green-100 border border-green-400 rounded text-green-700 text-xs font-bold print:hidden">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Signed up!
+                          </div>
                         )}
                       </div>
                     )}
