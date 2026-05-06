@@ -5,7 +5,7 @@ import { AlertTriangle, Lock, LockOpen, Clock, XCircle, CheckCircle2 } from 'luc
 
 const SHEET_CONFIG = {
   rdo: {
-    title: 'RDO 2000â0500',
+    title: 'RDO 2000-0500',
     teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   },
@@ -15,7 +15,7 @@ const SHEET_CONFIG = {
     maxSlots: 10
   },
   nights_ext: {
-    title: '4HR EXT TOUR (1600â2000 NIGHTS EXT)',
+    title: '4HR EXT TOUR (1600-2000 NIGHTS EXT)',
     teams: ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E'],
     maxSlots: 10
   }
@@ -248,7 +248,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
             // Record the bumped officer
             await addBumpedOfficer({
               officer_id: bumpedAssignment.officer_id,
-              officer_name: bumpedAssignment.officer_display?.split(' â ')[0] || '',
+              officer_name: bumpedAssignment.officer_display?.split('  -  ')[0] || '',
               officer_star: bumpedAssignment.star || '',
               officer_seniority: bumpedAssignment.seniority || '',
               bumped_by_name: `${officer.last_name}, ${officer.first_name}`,
@@ -274,7 +274,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
         
         assignment = {
           officer_id: officer.id,
-          officer_display: `${officer.last_name}, ${officer.first_name} â ${officer.star} â ${officer.seniority_date}`,
+          officer_display: `${officer.last_name}, ${officer.first_name}  -  ${officer.star}  -  ${officer.seniority_date}`,
           star: officer.star,
           seniority: officer.seniority_date,
           timestamp: timestamp,
@@ -344,7 +344,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
 
       await addBumpedOfficer({
         officer_id: bumpedAssignment.officer_id,
-        officer_name: bumpedAssignment.officer_display?.split(' â ')[0] || '',
+        officer_name: bumpedAssignment.officer_display?.split('  -  ')[0] || '',
         officer_star: bumpedAssignment.star || '',
         officer_seniority: bumpedAssignment.seniority || '',
         bumped_by_name: `${officer.last_name}, ${officer.first_name}`,
@@ -360,7 +360,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
         ...updatedRows[lowestSeniority.rowIndex],
         assignment_a: {
           officer_id: officer.id,
-          officer_display: `${officer.last_name}, ${officer.first_name} â ${officer.star} â ${officer.seniority_date}`,
+          officer_display: `${officer.last_name}, ${officer.first_name}  -  ${officer.star}  -  ${officer.seniority_date}`,
           star: officer.star,
           seniority: officer.seniority_date,
           timestamp: timestamp,
@@ -395,13 +395,13 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
       <div className="p-4 border-b-2 border-slate-900 print:border-black">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold tracking-tight text-slate-800 uppercase border-b-2 border-slate-900 pb-1 font-chivo">
-            {DAY_LABELS[day]} â OVERTIME WORKING â {config.title}
+            {DAY_LABELS[day]}  -  OVERTIME WORKING  -  {config.title}
           </h2>
           
           {/* Lock Status & Control */}
           <div className="flex items-center gap-3 print:hidden">
             <span className={`text-xs font-semibold uppercase px-2 py-1 rounded ${isSheetFull ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {filledSlots}/{availableSlots} Slots Filled{voidedSlots > 0 && ` Â· ${voidedSlots} Voided`}
+              {filledSlots}/{availableSlots} Slots Filled{voidedSlots > 0 && ` . ${voidedSlots} Voided`}
             </span>
             
             {/* Auto-lock countdown */}
@@ -619,7 +619,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-24 print:border-black">Seniority</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-36 print:border-black">Date/Time</th>
               {isAuthenticated && (
-                <th className="text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-10 print:hidden text-center" title="Void slot">â</th>
+                <th className="text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-10 print:hidden text-center" title="Void slot">X</th>
               )}
             </tr>
           </thead>
@@ -712,7 +712,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
                   <td className="p-2 border border-slate-300 text-slate-600 print:border-black">
                     {!isVoided && (assignment?.timestamp || '')}
                   </td>
-                  {/* Void/Unvoid button â admin only, print hidden */}
+                  {/* Void/Unvoid button  -  admin only, print hidden */}
                   {isAuthenticated && (
                     <td className="p-1 border border-slate-300 print:hidden w-10 text-center">
                       {isVoided ? (
@@ -721,7 +721,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
                           title="Restore this slot"
                           className="w-6 h-6 flex items-center justify-center rounded-sm bg-green-100 hover:bg-green-200 text-green-700 transition-colors text-xs font-bold"
                         >
-                          â©
+                          <<
                         </button>
                       ) : (
                         <button
@@ -730,10 +730,10 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
                               voidRow(day, sheetType, rowIndex, period);
                             }
                           }}
-                          title="Void this slot â make unavailable"
+                          title="Void this slot  -  make unavailable"
                           className="w-6 h-6 flex items-center justify-center rounded-sm bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors text-xs font-bold"
                         >
-                          â
+                          X
                         </button>
                       )}
                     </td>
@@ -750,7 +750,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
         <div className="p-4 bg-amber-50 border-t-2 border-amber-300 print:hidden" data-testid="bump-request-section">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-bold text-amber-800 uppercase">All Slots Full â Request by Seniority</span>
+            <span className="text-sm font-bold text-amber-800 uppercase">All Slots Full  -  Request by Seniority</span>
           </div>
           <p className="text-xs text-amber-700 mb-3">
             If you have more seniority than an assigned officer, select your name below to replace the least senior officer.
