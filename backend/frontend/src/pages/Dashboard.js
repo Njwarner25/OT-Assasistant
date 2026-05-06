@@ -76,7 +76,7 @@ function getWeekendLabel(period, activePeriod) {
 const Dashboard = () => {
     const [activePeriod, setActivePeriod] = useState('P1');
     const [currentPeriod, setCurrentPeriod] = useState('P1');
-    const [activeDay, setActiveDay] = useState('thursday');
+    const [activeDay, setActiveDay] = useState('friday');
     const [activeType, setActiveType] = useState('rdo');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [resetStatus, setResetStatus] = useState(null);
