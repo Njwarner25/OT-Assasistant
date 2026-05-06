@@ -708,7 +708,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
                           title="Restore this slot"
                           className="w-6 h-6 flex items-center justify-center rounded-sm bg-green-100 hover:bg-green-200 text-green-700 transition-colors text-xs font-bold"
                         >
-                          <<
+                          &#171;
                         </button>
                       ) : (
                         <button

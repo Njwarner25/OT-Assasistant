@@ -20,7 +20,7 @@ const OfficerSelect = ({ officers, selectedOfficerId, selectedAssignment, onSele
     return (
       officer.last_name.toLowerCase().includes(searchLower) ||
       officer.first_name.toLowerCase().includes(searchLower) ||
-      officer.star.includes(search)h
+      officer.star.includes(search)
     );
   });
 
