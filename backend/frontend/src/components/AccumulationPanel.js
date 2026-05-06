@@ -83,7 +83,7 @@ const AccumulationPanel = ({ period, officerId = null, compact = false }) => {
       <div className="bg-white border border-slate-200 rounded-sm p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            OT Hours — {PERIOD_LABELS[period] || period}
+            OT Hours  -  {PERIOD_LABELS[period] || period}
           </span>
           <TrendingUp className="w-3 h-3 text-slate-400" />
         </div>
@@ -134,10 +134,10 @@ const AccumulationPanel = ({ period, officerId = null, compact = false }) => {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-slate-600" />
           <span className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-            OT Accumulation — {PERIOD_LABELS[period] || period}
+            OT Accumulation  -  {PERIOD_LABELS[period] || period}
           </span>
           <span className="text-xs text-slate-400 font-mono">
-            ({data.length} officers · {totals.total} hrs total)
+            ({data.length} officers ,  {totals.total} hrs total)
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -193,8 +193,8 @@ const AccumulationPanel = ({ period, officerId = null, compact = false }) => {
                         i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                       }`}
                     >
-                      <td className={`${tdCls} font-medium text-slate-900`}>{r.officer_display || '—'}</td>
-                      <td className={`${tdCls} text-center text-slate-600`}>{r.star || '—'}</td>
+                      <td className={`${tdCls} font-medium text-slate-900`}>{r.officer_display || ' - '}</td>
+                      <td className={`${tdCls} text-center text-slate-600`}>{r.star || ' - '}</td>
                       <td className={`${tdCls} text-center ${r.rdo_hours > 0 ? 'text-slate-900 font-bold' : 'text-slate-300'}`}>
                         {r.rdo_hours || 0}
                       </td>
