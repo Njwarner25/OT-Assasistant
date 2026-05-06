@@ -83,7 +83,7 @@ const Dashboard = () => {
     const [showAccumulation, setShowAccumulation] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
-    const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
+    const { resetAllSheets, sheets, fetchSheet, isAuthenticated, loading } = useApp();
     const navigate = useNavigate();
     const printRef = useRef(null);
 
@@ -104,6 +104,15 @@ const Dashboard = () => {
           const interval = setInterval(() => setCurrentDate(new Date()), 60000);
           return () => clearInterval(interval);
     }, []);
+
+    // Auto-refresh roster data every 30 seconds so sign-ups appear without a manual page reload
+    useEffect(() => {
+      if (!fetchSheet) return;
+      const pollInterval = setInterval(() => {
+        fetchSheet(activeDay, activeType, activePeriod);
+      }, 30000);
+      return () => clearInterval(pollInterval);
+    }, [fetchSheet, activeDay, activeType, activePeriod]);
 
     const handleAdminClick = () => {
           navigate(isAuthenticated ? '/admin' : '/login');
