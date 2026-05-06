@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import RosterSheet from '../components/RosterSheet';
 import PeriodSelector from '../components/PeriodSelector';
 import AccumulationPanel from '../components/AccumulationPanel';
-import { Shield, Users, RotateCcw, Printer, Download, AlertTriangle, CheckCircle, Loader2, TrendingUp, ChevronDown, Calendar } from 'lucide-react';
+import { Shield, Users, RotateCcw, Printer, Download, AlertTriangle, CheckCircle, Loader2, TrendingUp, ChevronDown, Calendar, HelpCircle, X } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -62,7 +62,7 @@ function formatOTDate(date) {
     }).toUpperCase();
 }
 
-// Get the weekend label (e.g., "Apr 24–27 Weekend")
+// Get the weekend label (e.g., "Apr 24â27 Weekend")
 function getWeekendLabel(period, activePeriod) {
     const info = CPD_PERIODS[period || activePeriod];
     if (!info) return '';
@@ -70,7 +70,7 @@ function getWeekendLabel(period, activePeriod) {
     const sun = getOTWeekendDates(period || activePeriod, 'sunday');
     if (!thu || !sun) return '';
     const opts = { month: 'short', day: 'numeric', timeZone: 'America/Chicago' };
-    return `${thu.toLocaleDateString('en-US', opts)}–${sun.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/Chicago' })} Weekend`;
+    return `${thu.toLocaleDateString('en-US', opts)}â${sun.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/Chicago' })} Weekend`;
 }
 
 const Dashboard = () => {
@@ -81,6 +81,7 @@ const Dashboard = () => {
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [resetStatus, setResetStatus] = useState(null);
     const [showAccumulation, setShowAccumulation] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
     const { resetAllSheets, sheets, isAuthenticated, loading } = useApp();
     const navigate = useNavigate();
@@ -130,9 +131,9 @@ const Dashboard = () => {
         ];
 
     const sheetTypes = [
-      { id: 'rdo',        label: 'RDO 2000–0500',       hours: 9 },
+      { id: 'rdo',        label: 'RDO 2000â0500',       hours: 9 },
       { id: 'days_ext',   label: 'Days EXT 2100-0100',   hours: 4 },
-      { id: 'nights_ext', label: 'Nights EXT 1600–2000', hours: 4 },
+      { id: 'nights_ext', label: 'Nights EXT 1600â2000', hours: 4 },
         ];
 
     // Compute the actual date for the active day in the active period
@@ -153,20 +154,20 @@ const Dashboard = () => {
 
     return (
           <div className="min-h-screen bg-slate-50" data-testid="dashboard-page">
-    {/* ── Header ─────────────────────────────────────────── */}
+    {/* ââ Header âââââââââââââââââââââââââââââââââââââââââââ */}
             <header className="bg-slate-900 text-white print:hidden">
               <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 flex-shrink-0" />
                   <div>
                     <h1 className="text-lg font-black tracking-tight uppercase leading-none">
-                      OT ROSTER — Unit 214
+                      OT ROSTER â Unit 214
       </h1>
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">
-                      CPD Operations · 2026
+                      CPD Operations Â· 2026
       </p>
       </div>
-  {/* ── CPD Operational Date Display ── */}
+  {/* ââ CPD Operational Date Display ââ */}
               <div className="hidden sm:flex flex-col ml-4 pl-4 border-l border-slate-700">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-blue-400" />
@@ -175,13 +176,20 @@ const Dashboard = () => {
 </span>
   </div>
               <span className="text-[10px] text-blue-300 uppercase tracking-widest mt-0.5">
-{periodInfo ? `${periodInfo.label} · ${periodInfo.start}–${periodInfo.end}` : ''}{' '}
-{activePeriod === currentPeriod && <span className="text-green-400 font-bold">· CURRENT PERIOD</span>}
+{periodInfo ? `${periodInfo.label} Â· ${periodInfo.start}â${periodInfo.end}` : ''}{' '}
+{activePeriod === currentPeriod && <span className="text-green-400 font-bold">Â· CURRENT PERIOD</span>}
   </span>
   </div>
   </div>
            <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowHelp(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors bg-blue-700 text-white hover:bg-blue-600"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                How to Use
+              </button>
+                            <button
                onClick={() => navigate('/summary')}
                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors bg-slate-700 text-white hover:bg-slate-600`}
             >
@@ -200,10 +208,10 @@ const Dashboard = () => {
                 </div>
                 </header>
 
-{/* ── Period Selector ─────────────────────────────────── */}
+{/* ââ Period Selector âââââââââââââââââââââââââââââââââââ */}
       <PeriodSelector activePeriod={activePeriod} onChange={setActivePeriod} currentPeriod={currentPeriod} />
 
-      {/* ── Day + Sheet Type Selectors ───────────────────────── */}
+      {/* ââ Day + Sheet Type Selectors âââââââââââââââââââââââââ */}
       <div className="bg-slate-700 text-white print:hidden">
                 <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-6 flex-wrap">
       {/* Day */}
@@ -252,18 +260,18 @@ const Dashboard = () => {
                 </div>
                 </div>
 
-{/* ── Accumulation Panel (toggleable) ─────────────────── */}
+{/* ââ Accumulation Panel (toggleable) âââââââââââââââââââ */}
 {showAccumulation && (
           <div className="max-w-[1400px] mx-auto px-4 pt-4 print:hidden">
             <AccumulationPanel period={activePeriod} />
   </div>
        )}
 
-{/* ── Action Bar ──────────────────────────────────────── */}
+{/* ââ Action Bar ââââââââââââââââââââââââââââââââââââââââ */}
       <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between print:hidden">
                 <div className="text-xs text-slate-500">
                   <span className="font-mono font-bold text-slate-700">
-      {activePeriod} · {days.find(d => d.id === activeDay)?.label} · {sheetTypes.find(t => t.id === activeType)?.label}
+      {activePeriod} Â· {days.find(d => d.id === activeDay)?.label} Â· {sheetTypes.find(t => t.id === activeType)?.label}
 </span>
 {activeDateDisplay && (
               <span className="ml-3 text-blue-600 font-semibold">{activeDateDisplay}</span>
@@ -314,7 +322,59 @@ const Dashboard = () => {
 </div>
   </div>
 
-{/* ── Roster Sheet ────────────────────────────────────── */}
+{/* ââ Roster Sheet ââââââââââââââââââââââââââââââââââââââ */}
+      {/* How to Use Help Modal */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setShowHelp(false)}>
+          <div className="bg-white rounded shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-900 text-white rounded-t">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-blue-400" />
+                <h2 className="text-base font-bold uppercase tracking-wide">How to Use</h2>
+              </div>
+              <button onClick={() => setShowHelp(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4 text-sm text-slate-700">
+              <div>
+                <h3 className="font-bold text-slate-900 uppercase tracking-wide text-xs mb-1 border-b border-slate-200 pb-1">Viewing Sign-Ups</h3>
+                <p>The app opens to <strong>Friday</strong> -- the first active sign-up day. Use the day tabs (THURSDAY / FRIDAY / SATURDAY / SUNDAY) to switch days, and the shift tabs to switch between RDO and EXT shifts.</p>
+                <p className="mt-1">The badge in the top-right of the roster (e.g. <strong>5/10 SLOTS FILLED</strong>) shows how many slots are taken.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 uppercase tracking-wide text-xs mb-1 border-b border-slate-200 pb-1">Signing Up for OT</h3>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Select the <strong>day</strong> and <strong>shift</strong> you want to work.</li>
+                  <li>Find an empty row that says <em>Select officer...</em> and tap the dropdown.</li>
+                  <li>Type your <strong>last name</strong> to find yourself, then tap your name.</li>
+                  <li>Tap the blue <strong>Submit</strong> button that appears to confirm your sign-up.</li>
+                  <li>Your name, star#, seniority, and timestamp are saved automatically.</li>
+                </ol>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 uppercase tracking-wide text-xs mb-1 border-b border-slate-200 pb-1">Tips</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>If you cannot see your name, make sure you tapped the <strong>correct day tab</strong>.</li>
+                  <li>Each officer can only sign up <strong>once per day</strong>. Signing up twice will show an error.</li>
+                  <li>If all 10 slots are full, enter your name anyway -- if you have more seniority, you will replace the least senior officer.</li>
+                  <li>A <strong>deadline</strong> may be set by a supervisor. After the deadline, sign-ups are closed.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 uppercase tracking-wide text-xs mb-1 border-b border-slate-200 pb-1">Periods</h3>
+                <p>The period bar (P1-P13) shows all CPD operational periods. The <strong>CURRENT</strong> badge marks the active period. Always sign up under the current period.</p>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b">
+              <button onClick={() => setShowHelp(false)} className="w-full py-2 bg-slate-900 text-white font-bold text-sm rounded hover:bg-slate-700 transition-colors">
+                Got it, close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1400px] mx-auto px-4 pb-8" ref={printRef}>
                 <RosterSheet period={activePeriod} day={activeDay} sheetType={activeType} />
         </div>
