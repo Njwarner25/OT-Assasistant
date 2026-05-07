@@ -664,12 +664,14 @@ async def generate_supervisor_log_pdf(
 ):
     """
     Fill the CPD-11.455 Supervisor Management Log PDF with OT officer data.
-    Auto-fills: Officer Name, Star No., Call# (beat), Unit=214, Watch=4TH, Date.
-    Returns an editable PDF suitable for email attachment.
+
+    Populates the template's existing AcroForm fields by name (rather than
+    drawing text on top of the page). This preserves the form's own
+    Helvetica 8pt black appearance and keeps every cell editable so the
+    supervisor can complete the rest of the log in any PDF reader.
     """
-    from reportlab.pdfgen import canvas as rl_canvas
-    from reportlab.lib.pagesizes import letter
     from pypdf import PdfReader, PdfWriter
+    from pypdf.generic import NameObject, BooleanObject
     import io as _io, os as _os
 
     # Locate the blank template
@@ -685,6 +687,14 @@ async def generate_supervisor_log_pdf(
     if not sheet:
         sheet = make_default_sheet(period, day, sheet_type)
 
+    def normalize_name(raw: str) -> str:
+        # "WARNER, NATHANIEL" or "warner, nathaniel" -> "WARNER, Nathaniel".
+        # Last name UPPERCASE, first name Title Case to match the example PDF.
+        if not raw or "," not in raw:
+            return raw or ""
+        last, first = raw.split(",", 1)
+        return f"{last.strip().upper()}, {first.strip().title()}"
+
     # Collect active officer rows (skip voided)
     officers_data = []
     for row in sheet.get("rows", []):
@@ -692,13 +702,12 @@ async def generate_supervisor_log_pdf(
             continue
         a = row.get("assignment_a") or {}
         raw = a.get("officer_display", "") or ""
-        # Format: "LAST, FIRST — STAR — SENDATE"  or blank
+        # Stored format: "LAST, FIRST — STAR — SENDATE"
         name_part = raw.split(" — ")[0].strip() if raw else ""
         officers_data.append({
             "call_no": row.get("officer_number", "") or "",
-            "name":    name_part,
+            "name":    normalize_name(name_part),
             "star":    a.get("star", "") or "",
-            "team":    row.get("team", "") or "",
         })
 
     # Today's date in Chicago time
@@ -706,92 +715,60 @@ async def generate_supervisor_log_pdf(
         from zoneinfo import ZoneInfo
         chi_tz = ZoneInfo("America/Chicago")
     except Exception:
-        import datetime as _dt
-        chi_tz = _dt.timezone.utc
+        chi_tz = timezone.utc
     log_date = datetime.now(timezone.utc).astimezone(chi_tz).strftime("%m/%d/%Y")
 
-    type_labels = {
-        "rdo":        "RDO  2000-0500",
-        "days_ext":   "DAYS EXT  2100-0100",
-        "nights_ext": "NIGHTS EXT  1600-2000",
-    }
     day_labels_upper = {
         "thursday": "THURSDAY", "friday": "FRIDAY",
         "saturday": "SATURDAY", "sunday": "SUNDAY",
     }
 
-    # ── Page size: letter = 612 x 792 pts (portrait) ──────────
-    PW, PH = letter   # 612, 792
+    # ── AcroForm field names (mapped from the template's widget annotations) ──
+    # Header row:
+    HEADER_FIELDS = {
+        "sgt_name":  "STAR_NO58",  # Supervisor's Name cell
+        "sgt_star":  "STAR_NO59",  # Star No. (header) cell
+        "watch":     "FillText1",  # Watch cell
+        "unit_beat": "FillText2",  # Unit / Beat cell
+        "date":      "FillText4",  # Date cell
+    }
+    # One entry per officer block, top→bottom (the form has 7 blocks):
+    PERSONNEL_FIELDS = [
+        {"call": "FillText34",  "name": "NAME58",      "star": "STAR_NO61"},
+        {"call": "FillText49",  "name": "FillText43",  "star": "FillText48"},
+        {"call": "FillText64",  "name": "FillText62",  "star": "FillText63"},
+        {"call": "FillText79",  "name": "FillText77",  "star": "FillText78"},
+        {"call": "FillText94",  "name": "FillText92",  "star": "FillText93"},
+        {"call": "FillText110", "name": "FillText108", "star": "FillText109"},
+        {"call": "FillText125", "name": "FillText123", "star": "FillText124"},
+    ]
 
-    # ── Header field positions (Y from BOTTOM of page) ────────
-    # Header cell spans y=734-774 with column LABELS printed near the top
-    # (y≈763) and INPUT data written below them. Baseline y=741 lands the
-    # value text in the empty space below the labels.
-    # Column boundaries (left→right): 18, 219, 328, 374, 410, 466, 524, 594.
-    HEADER_Y   = 741
-    SGT_NAME_X = 222   # Supervisor's Name (cell 219-328)
-    SGT_STAR_X = 332   # Star No., header  (cell 328-374)
-    WATCH_X    = 378   # Watch             (cell 374-410)
-    UNIT_X     = 414   # Unit / Beat       (cell 410-466)
-    DATE_X     = 528   # Date              (cell 524-594)
+    field_values = {
+        HEADER_FIELDS["sgt_name"]:  (sgt_name or sheet.get("sergeant_name") or "").strip(),
+        HEADER_FIELDS["sgt_star"]:  (sgt_star or sheet.get("sergeant_star") or "").strip(),
+        HEADER_FIELDS["watch"]:     "4TH",
+        HEADER_FIELDS["unit_beat"]: "214",
+        HEADER_FIELDS["date"]:      log_date,
+    }
+    for i, off in enumerate(officers_data[:len(PERSONNEL_FIELDS)]):
+        f = PERSONNEL_FIELDS[i]
+        field_values[f["call"]] = str(off["call_no"])
+        field_values[f["name"]] = off["name"]
+        field_values[f["star"]] = str(off["star"])
 
-    # ── Personnel row positions ────────────────────────────────
-    # The form has 7 officer blocks; each block's "CALL NO. NAME STAR NO."
-    # label row sits ~13 pts above the input row. Block centers repeat every
-    # ~98.5 pts down the page (input baselines: 685, 586.5, 488, 389.5, …).
-    FIRST_ROW_Y = 685
-    BLOCK_H     = 98.5
-    MAX_OFFICERS = 7
+    # ── Fill the form ──────────────────────────────────────────
+    reader = PdfReader(template_path)
+    writer = PdfWriter(clone_from=reader)
 
-    # X positions within officer rows.
-    # Cell boundaries on the form: 18 | 78.5 | 263.2 | 294.2 | 429 | 460.6 | 594
-    CALL_X  = 22    # Call No.    (cell 18-78.5)
-    NAME_X  = 82    # Name        (cell 78.5-263.2)
-    STAR_X  = 268   # Star No.    (cell 263.2-294.2 — narrow)
+    # NeedAppearances=true tells PDF readers to regenerate each field's
+    # visible text using the field's own default appearance ('/Helv 8 Tf 0 g'),
+    # which is exactly what we want — same font, size, and placement as the
+    # blank template.
+    if "/AcroForm" in writer._root_object:
+        writer._root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
 
-    FONT    = "Helvetica-Bold"
-    FONT_SZ = 9
+    writer.update_page_form_field_values(writer.pages[0], field_values)
 
-    # ── Build the overlay canvas ───────────────────────────────
-    overlay_buf = _io.BytesIO()
-    c = rl_canvas.Canvas(overlay_buf, pagesize=letter)
-    c.setFillColorRGB(0, 0, 0)
-    c.setFont(FONT, FONT_SZ)
-
-    # Fill header
-    c.drawString(SGT_NAME_X, HEADER_Y, (sgt_name or sheet.get("sergeant_name") or "").upper())
-    c.drawString(SGT_STAR_X, HEADER_Y, sgt_star or sheet.get("sergeant_star") or "")
-    c.drawString(WATCH_X,    HEADER_Y, "4TH")
-    c.drawString(UNIT_X,     HEADER_Y, "214")
-    c.drawString(DATE_X,     HEADER_Y, log_date)
-
-    # Fill officer rows (one per block; the form has 7 blocks)
-    for i, off in enumerate(officers_data[:MAX_OFFICERS]):
-        y = FIRST_ROW_Y - (i * BLOCK_H)
-        if y < 40:
-            break
-        c.drawString(CALL_X, y, str(off["call_no"])[:8])
-        # Narrower font fits the 185-pt-wide name cell; truncate long names
-        c.drawString(NAME_X, y, off["name"][:26])
-        c.drawString(STAR_X, y, str(off["star"])[:5])
-
-    c.save()
-    overlay_buf.seek(0)
-
-    # ── Merge overlay onto template ────────────────────────────
-    template_reader = PdfReader(template_path)
-    overlay_reader  = PdfReader(overlay_buf)
-    writer = PdfWriter()
-
-    page = template_reader.pages[0]
-    page.merge_page(overlay_reader.pages[0])
-    writer.add_page(page)
-
-    # Carry over any additional template pages unchanged
-    for pg in template_reader.pages[1:]:
-        writer.add_page(pg)
-
-    # Write final PDF (stays editable — no encryption)
     output_buf = _io.BytesIO()
     writer.write(output_buf)
     output_buf.seek(0)
