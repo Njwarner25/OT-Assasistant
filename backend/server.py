@@ -724,32 +724,38 @@ async def generate_supervisor_log_pdf(
     PW, PH = letter   # 612, 792
 
     # ── Header field positions (Y from BOTTOM of page) ────────
-    # Visual measurement from the PDF:
-    #   Header label row is near top: Y ≈ 741 pts from bottom
+    # Header cell spans y=734-774 with column LABELS printed near the top
+    # (y≈763) and INPUT data written below them. Baseline y=741 lands the
+    # value text in the empty space below the labels.
+    # Column boundaries (left→right): 18, 219, 328, 374, 410, 466, 524, 594.
     HEADER_Y   = 741
-    SGT_NAME_X = 211   # Supervisor's Name
-    SGT_STAR_X = 320   # Star No. (header)
-    WATCH_X    = 355   # Watch
-    UNIT_X     = 388   # Unit/Beat
-    DATE_X     = 489   # Date
+    SGT_NAME_X = 222   # Supervisor's Name (cell 219-328)
+    SGT_STAR_X = 332   # Star No., header  (cell 328-374)
+    WATCH_X    = 378   # Watch             (cell 374-410)
+    UNIT_X     = 414   # Unit / Beat       (cell 410-466)
+    DATE_X     = 528   # Date              (cell 524-594)
 
     # ── Personnel row positions ────────────────────────────────
-    # Each officer block has 4 sub-rows; total height ≈ 42 pts per block
-    # First "CALL NO." row Y from bottom ≈ 700
-    FIRST_ROW_Y = 700
-    BLOCK_H     = 21    # pts per officer row (CPD form)
+    # The form has 7 officer blocks; each block's "CALL NO. NAME STAR NO."
+    # label row sits ~13 pts above the input row. Block centers repeat every
+    # ~98.5 pts down the page (input baselines: 685, 586.5, 488, 389.5, …).
+    FIRST_ROW_Y = 685
+    BLOCK_H     = 98.5
+    MAX_OFFICERS = 7
 
-    # X positions within officer rows
-    CALL_X  = 22    # Call No.
-    NAME_X  = 78    # Name
-    STAR_X  = 207   # Star No.
+    # X positions within officer rows.
+    # Cell boundaries on the form: 18 | 78.5 | 263.2 | 294.2 | 429 | 460.6 | 594
+    CALL_X  = 22    # Call No.    (cell 18-78.5)
+    NAME_X  = 82    # Name        (cell 78.5-263.2)
+    STAR_X  = 268   # Star No.    (cell 263.2-294.2 — narrow)
 
-    FONT    = "Helvetica"
-    FONT_SZ = 7.5
+    FONT    = "Helvetica-Bold"
+    FONT_SZ = 9
 
     # ── Build the overlay canvas ───────────────────────────────
     overlay_buf = _io.BytesIO()
     c = rl_canvas.Canvas(overlay_buf, pagesize=letter)
+    c.setFillColorRGB(0, 0, 0)
     c.setFont(FONT, FONT_SZ)
 
     # Fill header
@@ -759,14 +765,15 @@ async def generate_supervisor_log_pdf(
     c.drawString(UNIT_X,     HEADER_Y, "214")
     c.drawString(DATE_X,     HEADER_Y, log_date)
 
-    # Fill officer rows (max 10 slots on one page)
-    for i, off in enumerate(officers_data[:10]):
+    # Fill officer rows (one per block; the form has 7 blocks)
+    for i, off in enumerate(officers_data[:MAX_OFFICERS]):
         y = FIRST_ROW_Y - (i * BLOCK_H)
         if y < 40:
             break
-        c.drawString(CALL_X,  y, str(off["call_no"])[:8])
-        c.drawString(NAME_X,  y, off["name"][:30])
-        c.drawString(STAR_X,  y, str(off["star"])[:8])
+        c.drawString(CALL_X, y, str(off["call_no"])[:8])
+        # Narrower font fits the 185-pt-wide name cell; truncate long names
+        c.drawString(NAME_X, y, off["name"][:26])
+        c.drawString(STAR_X, y, str(off["star"])[:5])
 
     c.save()
     overlay_buf.seek(0)
