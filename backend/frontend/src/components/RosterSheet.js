@@ -383,7 +383,15 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   // team slot to organize partners (e.g. move an entry from a Team E row
   // into a Team C row). Team labels stay with their row position; only
   // the officer assignment + per-officer fields move.
-  const swapRowAssignments = (a, b) => {
+  //
+  // The source rowIndex is stashed in the native dataTransfer object (not
+  // React state) so the drop handler doesn't race the re-render that fires
+  // when dragstart calls setState — relying on state means handleDragOver
+  // sees draggedRowIndex=null in its closure and never calls preventDefault,
+  // which silently cancels the drop and prevents the PUT from ever firing.
+  const DRAG_MIME = 'application/x-roster-row';
+
+  const swapRowAssignments = async (a, b) => {
     if (!localSheet || a === b) return;
     const updatedRows = [...localSheet.rows];
     const src = updatedRows[a];
@@ -392,21 +400,24 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
     if (src.voided || dst.voided) return;
     updatedRows[a] = {
       ...src,
-      assignment_a: dst.assignment_a,
-      officer_number: dst.officer_number,
-      deployment_location: dst.deployment_location,
+      assignment_a: dst.assignment_a ?? null,
+      officer_number: dst.officer_number ?? '',
+      deployment_location: dst.deployment_location ?? '',
     };
     updatedRows[b] = {
       ...dst,
-      assignment_a: src.assignment_a,
-      officer_number: src.officer_number,
-      deployment_location: src.deployment_location,
+      assignment_a: src.assignment_a ?? null,
+      officer_number: src.officer_number ?? '',
+      deployment_location: src.deployment_location ?? '',
     };
-    saveSheet({ ...localSheet, rows: updatedRows });
+    await saveSheet({ ...localSheet, rows: updatedRows });
   };
 
   const handleDragStart = (rowIndex) => (e) => {
-    if (!isAuthenticated || isSheetLocked()) return;
+    if (!isAuthenticated || isSheetLocked()) {
+      e.preventDefault();
+      return;
+    }
     const row = localSheet.rows[rowIndex];
     if (!row || row.voided || !row.assignment_a?.officer_id) {
       e.preventDefault();
@@ -414,13 +425,18 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
     }
     setDraggedRowIndex(rowIndex);
     e.dataTransfer.effectAllowed = 'move';
+    // Stash the source row index in the dataTransfer payload so the drop
+    // handler can read it without depending on React state.
+    e.dataTransfer.setData(DRAG_MIME, String(rowIndex));
     e.dataTransfer.setData('text/plain', String(rowIndex));
   };
 
   const handleDragOver = (rowIndex) => (e) => {
-    if (draggedRowIndex === null) return;
+    if (!isAuthenticated || isSheetLocked()) return;
     const row = localSheet.rows[rowIndex];
     if (!row || row.voided) return;
+    // preventDefault unconditionally on valid targets — this is what
+    // signals the browser that drops are accepted here.
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (dragOverRowIndex !== rowIndex) setDragOverRowIndex(rowIndex);
@@ -432,10 +448,13 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
 
   const handleDrop = (targetRowIndex) => (e) => {
     e.preventDefault();
-    const source = draggedRowIndex;
+    const sourceStr =
+      e.dataTransfer.getData(DRAG_MIME) ||
+      e.dataTransfer.getData('text/plain');
     setDraggedRowIndex(null);
     setDragOverRowIndex(null);
-    if (source === null) return;
+    const source = parseInt(sourceStr, 10);
+    if (Number.isNaN(source)) return;
     swapRowAssignments(source, targetRowIndex);
   };
 
