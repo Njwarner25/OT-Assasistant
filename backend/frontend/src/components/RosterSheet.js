@@ -112,7 +112,7 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   const saveSheet = useCallback(async (updatedSheet) => {
     setLocalSheet(updatedSheet);
     await updateSheet(day, sheetType, updatedSheet, period);
-  }, [day, sheetType, updateSheet]);
+  }, [day, sheetType, period, updateSheet]);
 
   // Check if sheet is locked (either manually or auto-locked)
   const isSheetLocked = useCallback(() => {
