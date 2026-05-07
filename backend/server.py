@@ -732,15 +732,25 @@ async def generate_supervisor_log_pdf(
         "unit_beat": "FillText2",  # Unit / Beat cell
         "date":      "FillText4",  # Date cell
     }
-    # One entry per officer block, top→bottom (the form has 7 blocks):
+    # Each of the 7 blocks has TWO personnel rows: a CALL NO. row on top and
+    # an OUTSIDE NO. row directly beneath it. Officers fill top-to-bottom
+    # block-by-block (block 1 CALL, block 1 OUTSIDE, block 2 CALL, ...) so
+    # consecutive entries are stacked, not separated by blank space.
     PERSONNEL_FIELDS = [
-        {"call": "FillText34",  "name": "NAME58",      "star": "STAR_NO61"},
-        {"call": "FillText49",  "name": "FillText43",  "star": "FillText48"},
-        {"call": "FillText64",  "name": "FillText62",  "star": "FillText63"},
-        {"call": "FillText79",  "name": "FillText77",  "star": "FillText78"},
-        {"call": "FillText94",  "name": "FillText92",  "star": "FillText93"},
-        {"call": "FillText110", "name": "FillText108", "star": "FillText109"},
-        {"call": "FillText125", "name": "FillText123", "star": "FillText124"},
+        {"call": "FillText34",  "name": "NAME58",      "star": "STAR_NO61"},   # block 1 CALL
+        {"call": "FillText39",  "name": "FillText40",  "star": "FillText41"},  # block 1 OUTSIDE
+        {"call": "FillText49",  "name": "FillText43",  "star": "FillText48"},  # block 2 CALL
+        {"call": "FillText54",  "name": "FillText138", "star": "FillText55"},  # block 2 OUTSIDE
+        {"call": "FillText64",  "name": "FillText62",  "star": "FillText63"},  # block 3 CALL
+        {"call": "FillText69",  "name": "FillText139", "star": "FillText70"},  # block 3 OUTSIDE
+        {"call": "FillText79",  "name": "FillText77",  "star": "FillText78"},  # block 4 CALL
+        {"call": "FillText84",  "name": "FillText140", "star": "FillText85"},  # block 4 OUTSIDE
+        {"call": "FillText94",  "name": "FillText92",  "star": "FillText93"},  # block 5 CALL
+        {"call": "FillText99",  "name": "FillText141", "star": "FillText100"}, # block 5 OUTSIDE
+        {"call": "FillText110", "name": "FillText108", "star": "FillText109"}, # block 6 CALL
+        {"call": "FillText115", "name": "FillText142", "star": "FillText116"}, # block 6 OUTSIDE
+        {"call": "FillText125", "name": "FillText123", "star": "FillText124"}, # block 7 CALL
+        {"call": "FillText130", "name": "FillText143", "star": "FillText131"}, # block 7 OUTSIDE
     ]
 
     field_values = {
