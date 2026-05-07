@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import OfficerSelect from './OfficerSelect';
-import { AlertTriangle, Lock, LockOpen, Clock, XCircle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Lock, LockOpen, Clock, XCircle, CheckCircle2, GripVertical } from 'lucide-react';
 
 const SHEET_CONFIG = {
   rdo: {
@@ -86,6 +86,8 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
   const [autoLockTime, setAutoLockTime] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [draggedRowIndex, setDraggedRowIndex] = useState(null);
+  const [dragOverRowIndex, setDragOverRowIndex] = useState(null);
 
   const config = SHEET_CONFIG[sheetType];
 
@@ -376,6 +378,72 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
 
 
 
+  // ── Drag-and-drop reordering (admin only) ─────────────────────────────
+  // Lets the admin pick up a signed-up officer and drop them into another
+  // team slot to organize partners (e.g. move an entry from a Team E row
+  // into a Team C row). Team labels stay with their row position; only
+  // the officer assignment + per-officer fields move.
+  const swapRowAssignments = (a, b) => {
+    if (!localSheet || a === b) return;
+    const updatedRows = [...localSheet.rows];
+    const src = updatedRows[a];
+    const dst = updatedRows[b];
+    if (!src || !dst) return;
+    if (src.voided || dst.voided) return;
+    updatedRows[a] = {
+      ...src,
+      assignment_a: dst.assignment_a,
+      officer_number: dst.officer_number,
+      deployment_location: dst.deployment_location,
+    };
+    updatedRows[b] = {
+      ...dst,
+      assignment_a: src.assignment_a,
+      officer_number: src.officer_number,
+      deployment_location: src.deployment_location,
+    };
+    saveSheet({ ...localSheet, rows: updatedRows });
+  };
+
+  const handleDragStart = (rowIndex) => (e) => {
+    if (!isAuthenticated || isSheetLocked()) return;
+    const row = localSheet.rows[rowIndex];
+    if (!row || row.voided || !row.assignment_a?.officer_id) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedRowIndex(rowIndex);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(rowIndex));
+  };
+
+  const handleDragOver = (rowIndex) => (e) => {
+    if (draggedRowIndex === null) return;
+    const row = localSheet.rows[rowIndex];
+    if (!row || row.voided) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverRowIndex !== rowIndex) setDragOverRowIndex(rowIndex);
+  };
+
+  const handleDragLeave = (rowIndex) => () => {
+    if (dragOverRowIndex === rowIndex) setDragOverRowIndex(null);
+  };
+
+  const handleDrop = (targetRowIndex) => (e) => {
+    e.preventDefault();
+    const source = draggedRowIndex;
+    setDraggedRowIndex(null);
+    setDragOverRowIndex(null);
+    if (source === null) return;
+    swapRowAssignments(source, targetRowIndex);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedRowIndex(null);
+    setDragOverRowIndex(null);
+  };
+
   if (!localSheet) {
     return <div className="text-slate-500">Loading sheet...</div>;
   }
@@ -609,6 +677,9 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
         <table className="w-full border-collapse text-xs font-mono" data-testid="roster-table">
           <thead>
             <tr className="bg-slate-100 print:bg-gray-200">
+              {isAuthenticated && (
+                <th className="text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-8 print:hidden text-center" title="Drag to reorder"> </th>
+              )}
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-16 print:border-black">Team</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-20 print:border-black">BT#</th>
               <th className="text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest p-2 border border-slate-300 w-32 print:border-black">Location</th>
@@ -629,13 +700,45 @@ const RosterSheet = ({ day, sheetType, period = 'P1' }) => {
               const isEntryLocked = isEntryFilled && !isAuthenticated;
 
               const isVoided = !!row.voided;
+              const isDragSource = draggedRowIndex === rowIndex;
+              const isDragTarget = dragOverRowIndex === rowIndex && draggedRowIndex !== null && draggedRowIndex !== rowIndex;
               const rowBg = isVoided
                 ? 'bg-slate-200'
+                : isDragTarget ? 'bg-blue-100'
                 : hasDuplicate ? 'bg-red-100'
                 : isEntryFilled ? 'bg-green-50'
                 : (rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50');
+              const dragDropProps = isAuthenticated && !locked && !isVoided
+                ? {
+                    onDragOver: handleDragOver(rowIndex),
+                    onDragLeave: handleDragLeave(rowIndex),
+                    onDrop: handleDrop(rowIndex),
+                  }
+                : {};
+              const canDragRow = isAuthenticated && !locked && !isVoided && isEntryFilled;
               return (
-                <tr key={row.id} className={`${rowBg} print:bg-white`} data-testid={`row-${rowIndex}`}>
+                <tr
+                  key={row.id}
+                  className={`${rowBg} print:bg-white ${isDragSource ? 'opacity-40' : ''} ${isDragTarget ? 'outline outline-2 outline-blue-400' : ''}`}
+                  data-testid={`row-${rowIndex}`}
+                  {...dragDropProps}
+                >
+                  {isAuthenticated && (
+                    <td className="p-1 border border-slate-300 print:hidden w-8 text-center align-middle">
+                      {canDragRow ? (
+                        <span
+                          draggable
+                          onDragStart={handleDragStart(rowIndex)}
+                          onDragEnd={handleDragEnd}
+                          title="Drag to move this officer to another team slot"
+                          className="inline-flex items-center justify-center w-6 h-6 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-sm cursor-grab active:cursor-grabbing"
+                          data-testid={`drag-handle-${rowIndex}`}
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </span>
+                      ) : null}
+                    </td>
+                  )}
                   <td className="p-2 border border-slate-300 text-center font-bold text-slate-700 print:border-black">
                     {isVoided ? (
                       <span className="text-slate-400 line-through text-xs">VOID</span>
