@@ -703,7 +703,7 @@ async def generate_supervisor_log_pdf(
         a = row.get("assignment_a") or {}
         raw = a.get("officer_display", "") or ""
         # Stored format: "LAST, FIRST — STAR — SENDATE"
-        name_part = raw.split(" — ")[0].strip() if raw else ""
+        name_part = raw.split(" - ")[0].strip() if raw else ""
         officers_data.append({
             "call_no": row.get("officer_number", "") or "",
             "name":    normalize_name(name_part),
