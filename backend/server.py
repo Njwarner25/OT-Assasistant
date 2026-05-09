@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import io
+import re
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict
@@ -572,7 +573,7 @@ async def export_sheet_pdf(period: str, day: str, sheet_type: str):
     data = [['Team', 'BT#', 'Location', 'Officer', 'Star', 'Seniority', 'Date/Time']]
     for row in sheet.get('rows', []):
         a = row.get('assignment_a') or {}
-        name = (a.get('officer_display') or '').split(' - ')[0] if a.get('officer_display') else ''
+        name = (a.get('officer_display') or '').split(' — ')[0] if a.get('officer_display') else ''
         data.append([row.get('team',''), row.get('officer_number',''),
                      row.get('deployment_location',''), name,
                      a.get('star',''), a.get('seniority',''), a.get('timestamp','')])
@@ -703,7 +704,7 @@ async def generate_supervisor_log_pdf(
         a = row.get("assignment_a") or {}
         raw = a.get("officer_display", "") or ""
         # Stored format: "LAST, FIRST — STAR — SENDATE"
-        name_part = raw.split(" - ")[0].strip() if raw else ""
+        name_part = raw.split(" — ")[0].strip() if raw else ""
         officers_data.append({
             "call_no": row.get("officer_number", "") or "",
             "name":    normalize_name(name_part),
