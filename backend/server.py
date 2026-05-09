@@ -572,7 +572,7 @@ async def export_sheet_pdf(period: str, day: str, sheet_type: str):
     data = [['Team', 'BT#', 'Location', 'Officer', 'Star', 'Seniority', 'Date/Time']]
     for row in sheet.get('rows', []):
         a = row.get('assignment_a') or {}
-        name = (a.get('officer_display') or '').split(' — ')[0] if a.get('officer_display') else ''
+        name = (a.get('officer_display') or '').split(' - ')[0] if a.get('officer_display') else ''
         data.append([row.get('team',''), row.get('officer_number',''),
                      row.get('deployment_location',''), name,
                      a.get('star',''), a.get('seniority',''), a.get('timestamp','')])
