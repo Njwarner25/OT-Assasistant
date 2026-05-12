@@ -195,6 +195,39 @@ export const AppProvider = ({ children }) => {
           }
     }, [fetchBumpedOfficers]);
 
+    // ── Weekend Rollover ──────────────────────────────────────────
+    const weekendRollover = useCallback(async (period, weekendLabel) => {
+          try {
+                  const params = {};
+                  if (period) params.period = period;
+                  if (weekendLabel) params.weekend_label = weekendLabel;
+                  const response = await axios.post(`${API}/sheets/weekend-rollover`, null, { params });
+                  // Refresh all sheets so the UI shows the cleared boards
+                  const days = ['thursday', 'friday', 'saturday', 'sunday'];
+                  const types = ['rdo', 'days_ext', 'nights_ext'];
+                  for (const day of days) {
+                            for (const type of types) {
+                                        await fetchSheet(day, type, period || currentPeriod);
+                            }
+                  }
+                  return response.data;
+          } catch (error) {
+                  console.error('Error during weekend rollover:', error);
+                  throw error;
+          }
+    }, [fetchSheet, currentPeriod]);
+
+    const fetchWeekendHistory = useCallback(async (period) => {
+          try {
+                  const params = period ? { period } : {};
+                  const response = await axios.get(`${API}/weekend-history`, { params });
+                  return response.data;
+          } catch (error) {
+                  console.error('Error fetching weekend history:', error);
+                  return [];
+          }
+    }, []);
+
     const lockSheet = useCallback(async (day, sheetType, period = 'P1') => {
           try {
                   await axios.post(`${API}/sheets/${period}/${day}/${sheetType}/lock`);
@@ -317,6 +350,8 @@ export const AppProvider = ({ children }) => {
             fetchCurrentPeriod,
             updateSheet,
             resetAllSheets,
+            weekendRollover,
+            fetchWeekendHistory,
             addOfficer,
             updateOfficer,
             deleteOfficer,

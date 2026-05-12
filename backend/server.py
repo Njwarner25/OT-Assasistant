@@ -299,6 +299,129 @@ async def reset_all_sheets(period: Optional[str] = None):
     await log_version_change("Reset", f"All sheets reset for {target_period}")
     return {"message": f"All sheets reset for {target_period}"}
 
+
+# ==================== WEEKEND ROLLOVER ====================
+
+@api_router.post("/sheets/weekend-rollover")
+async def weekend_rollover(period: Optional[str] = None, weekend_label: Optional[str] = None):
+    """
+    Archive current weekend signup data to weekend_history, then clear all
+    assignment slots so officers can sign up for the next weekend.
+
+    - Accumulation (hours totals) is NOT touched — it stays for period summaries.
+    - Sheet structure (teams, row order, voided rows) is preserved.
+    - Only assignment_a is cleared on each row.
+    - Locked sheets are automatically unlocked so the next weekend is open.
+    """
+    target_period = period or get_current_period()
+    now = datetime.now(timezone.utc).isoformat()
+    label = weekend_label or f"Week of {datetime.now(timezone.utc).strftime('%m/%d/%Y')}"
+
+    # --- 1. Snapshot every sheet into weekend_history ---
+    snapshot_id = str(uuid.uuid4())
+    history_entry = {
+        "id": snapshot_id,
+        "period": target_period,
+        "weekend_label": label,
+        "archived_at": now,
+        "sheets": {}
+    }
+
+    for day in OT_DAYS:
+        history_entry["sheets"][day] = {}
+        for sheet_type in SHEET_TYPES:
+            sheet_id = make_sheet_id(target_period, day, sheet_type)
+            sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
+            if sheet:
+                # Only keep the officer assignment data — not lock state etc.
+                officers = []
+                for row in sheet.get("rows", []):
+                    a = row.get("assignment_a") or {}
+                    if a.get("officer_id"):
+                        officers.append({
+                            "team": row.get("team"),
+                            "officer_id": a.get("officer_id"),
+                            "officer_display": a.get("officer_display"),
+                            "star": a.get("star"),
+                            "seniority": a.get("seniority"),
+                            "timestamp": a.get("timestamp"),
+                            "sheet_type": sheet_type,
+                            "day": day,
+                        })
+                history_entry["sheets"][day][sheet_type] = officers
+
+    await db.weekend_history.insert_one(history_entry)
+
+    # --- 2. Clear assignments on all sheets (keep structure/voids) ---
+    for day in OT_DAYS:
+        for sheet_type in SHEET_TYPES:
+            sheet_id = make_sheet_id(target_period, day, sheet_type)
+            sheet = await db.sheets.find_one({"sheet_id": sheet_id}, {"_id": 0})
+            if not sheet:
+                continue
+            cleared_rows = []
+            for row in sheet.get("rows", []):
+                cleared_rows.append({
+                    **row,
+                    "assignment_a": None,
+                    # Preserve voided state — voided rows stay voided
+                })
+            await db.sheets.update_one(
+                {"sheet_id": sheet_id},
+                {"$set": {
+                    "rows": cleared_rows,
+                    "locked": False,
+                    "locked_at": None,
+                    "locked_by": None,
+                    "updated_at": now,
+                }}
+            )
+
+    await log_version_change("Weekend Rollover", f"Archived {label} ({target_period}) → snapshot {snapshot_id}. Sheets cleared for next weekend.")
+    return {
+        "message": f"Weekend rolled over. Assignments archived as '{label}' and sheets cleared for next weekend.",
+        "snapshot_id": snapshot_id,
+        "period": target_period,
+        "weekend_label": label,
+    }
+
+
+@api_router.get("/weekend-history")
+async def get_weekend_history(period: Optional[str] = None):
+    """Return all archived weekends, optionally filtered by period."""
+    query = {"period": period} if period else {}
+    history = await db.weekend_history.find(query, {"_id": 0}).to_list(100)
+    history.sort(key=lambda x: x.get("archived_at", ""), reverse=True)
+    # Return summary only (not full row data) to keep response light
+    summaries = []
+    for entry in history:
+        total_officers = 0
+        sheet_summaries = {}
+        for day, day_sheets in entry.get("sheets", {}).items():
+            for sheet_type, officers in day_sheets.items():
+                count = len(officers)
+                total_officers += count
+                if count:
+                    sheet_summaries[f"{day}/{sheet_type}"] = count
+        summaries.append({
+            "id": entry["id"],
+            "period": entry["period"],
+            "weekend_label": entry["weekend_label"],
+            "archived_at": entry["archived_at"],
+            "total_signups": total_officers,
+            "sheet_counts": sheet_summaries,
+        })
+    return summaries
+
+
+@api_router.get("/weekend-history/{snapshot_id}")
+async def get_weekend_history_detail(snapshot_id: str):
+    """Return full officer detail for a specific archived weekend."""
+    entry = await db.weekend_history.find_one({"id": snapshot_id}, {"_id": 0})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Weekend snapshot not found")
+    return entry
+
 # ==================== ACCUMULATION ====================
 async def _recalc_accumulation_for_sheet(period: str, sheet_dict: dict):
     sheet_type = sheet_dict.get('sheet_type', '')
